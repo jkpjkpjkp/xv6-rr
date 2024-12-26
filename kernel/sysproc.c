@@ -22,6 +22,12 @@ sys_getpid(void)
 }
 
 uint64
+sys_getppid(void)
+{
+  return myproc()->parent->pid;
+}
+
+uint64
 sys_fork(void)
 {
   return fork();
@@ -37,6 +43,18 @@ sys_wait(void)
 
 uint64
 sys_sbrk(void)
+{
+  uint64 addr, brk;
+
+  argaddr(0, &brk);
+  addr = myproc()->sz;
+  if(growproc((int)(brk-addr)) < 0)
+    return -1;
+  return addr;
+}
+
+uint64
+sys_brk(void)
 {
   uint64 addr;
   int n;

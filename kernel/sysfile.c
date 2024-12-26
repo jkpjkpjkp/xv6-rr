@@ -68,7 +68,8 @@ fdalloc3(struct file *f, int fd)
 
 // returns strlen(buf) on success
 int 
-pwd(char *buf) {
+pwd(char *buf)
+{
   struct inode *ip;
   struct proc *p = myproc();
   ip = p->cwd;
@@ -123,6 +124,61 @@ pwd(char *buf) {
   int ret = strlen(fullpath);
   safestrcpy(buf, fullpath, ret);
   return ret;
+}
+
+/// @brief finds inode for abs or relative path
+/// @param fd (optional) parent dir (tmp working dir) fd
+/// @param path abs or relative path. if abs, `fd` is ignored. if path==0, return file[fd]->ip
+/// @return retrieved inode
+struct inode*
+namefd(int fd, int nameiparent, char *path)
+{
+  struct inode *ip, *next;
+  struct file *f;
+  char *name;
+  if(!path){
+    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+      return 0;
+    return f->ip;
+  }
+  if(*path == '/')
+    ip = iget(ROOTDEV, ROOTINO);
+  else{
+    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+      return 0;
+    ip = f->ip;
+  }
+
+  // copied from `static struct inode* namex(`
+  while((path = skipelem(path, name)) != 0){
+    ilock(ip);
+    if(ip->type != T_DIR){
+      iunlockput(ip);
+      return 0;
+    }
+    if(nameiparent && *path == '\0'){
+      // Stop one level early.
+      iunlock(ip);
+      return ip;
+    }
+    if((next = dirlookup(ip, name, 0)) == 0){
+      iunlockput(ip);
+      return 0;
+    }
+    iunlockput(ip);
+    ip = next;
+  }
+  if(nameiparent){
+    iput(ip);
+    return 0;
+  }
+  return ip;
+}
+
+uint64
+sys_mount(void)
+{
+  
 }
 
 uint64
@@ -257,6 +313,60 @@ bad:
   return -1;
 }
 
+uint64
+sys_linkat(void) // UNDONE! name[] not populated.
+{
+  char name[DIRSIZ], new[MAXPATH], old[MAXPATH];
+  int olddirfd, newdirfd, flags;
+  struct inode *dp, *ip;
+  argint(0, &olddirfd);
+  argint(2, &newdirfd);
+  argint(4, &flags);
+
+  if(argstr(1, old, MAXPATH) < 0 || argstr(3, new, MAXPATH) < 0)
+    return -1;
+
+  begin_op();
+  if((ip = namefd(olddirfd, 0, old)) == 0){
+    end_op();
+    return -1;
+  }
+
+  ilock(ip);
+  if(ip->type == T_DIR){
+    iunlockput(ip);
+    end_op();
+    return -1;
+  }
+
+  ip->nlink++;
+  iupdate(ip);
+  iunlock(ip);
+
+  if((dp = namefd(newdirfd, 1, new)) == 0)
+    goto bad;
+  ilock(dp);
+  if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
+    iunlockput(dp);
+    goto bad;
+  }
+
+  iunlockput(dp);
+  iput(ip);
+
+  end_op();
+
+  return 0;
+
+bad:
+  ilock(ip);
+  ip->nlink--;
+  iupdate(ip);
+  iunlockput(ip);
+  end_op();
+  return -1;
+}
+
 // Is the directory dp empty except for "." and ".." ?
 static int
 isdirempty(struct inode *dp)
@@ -328,6 +438,12 @@ bad:
   iunlockput(dp);
   end_op();
   return -1;
+}
+
+uint64
+sys_unlinkat(void)
+{
+  panic("TODO");
 }
 
 static struct inode*
@@ -459,7 +575,7 @@ sys_open(void)
 }
 
 uint64
-sys_openat(void)
+sys_openat(void) // TODO: double check the O_CREATE is set as always on
 {
   int fd, n;
   char path[MAXPATH], fullpath[MAXPATH];
@@ -557,16 +673,78 @@ sys_chdir(void)
 uint64
 sys_getcwd(void)
 {
+  int n;
   uint64 buf;
   argaddr(0, &buf);
   char fullpath[MAXPATH] = "";
-  pwd(fullpath);
+  n = pwd(fullpath);
 
   struct proc *p = myproc();
-  // Copy full path to user space
-  if(copyout(p->pagetable, buf, fullpath, strlen(fullpath) + 1) < 0)
+  if(copyout(p->pagetable, buf, fullpath, n+1) < 0)
     return -1;
   return 0;
+}
+
+struct sys_getdents64_dirent {
+  uint64 d_ino;	// 索引结点号
+  long d_off;	// 到下一个sys_getdents64_dirent的偏移
+  unsigned short d_reclen;	// 当前sys_getdents64_dirent的长度
+  unsigned char d_type;	// 文件类型
+  char d_name[DIRSIZ];	//文件名
+};
+
+uint64
+sys_getdents64(void)
+{
+  // by o1 pro, modified by jkp
+  int fd;
+  struct file *f;
+  uint64 buf;
+  int len, cur_len;
+  uint off;
+  struct dirent de;
+  struct sys_getdents64_dirent ret;
+  struct inode *ip;
+  struct proc *p;
+
+  argint(0, &fd);
+  argaddr(1, &buf);
+  argint(2, &len);
+
+  struct proc *p = myproc();
+  if (fd < 0 || fd >= NOFILE || (f = p->ofile[fd]) == 0)
+    return -1;
+
+  if (f->type != FD_INODE || !f->readable)
+    return -1;
+
+  struct inode *dp = f->ip;
+  ilock(dp);
+  if (dp->type != T_DIR) {
+    iunlock(dp);
+    return -1;
+  }
+
+  p = myproc();
+  for(off = 0, cur_len = 0; off < dp->size; off += sizeof(de), cur_len += sizeof(ret)) {
+    if(readi(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+      panic("sys_getdents64 read");
+    if(de.inum == 0)
+      continue;
+    ret.d_ino = de.inum;
+    safestrcpy(ret.d_name, de.name, DIRSIZ);
+    ip = iget(dp->dev, de.inum);
+    ret.d_type = ip->type;
+    ret.d_off = sizeof(ret); // todo: should we put special value to indicate it is the last ret?
+    ret.d_reclen = sizeof(ret) - sizeof(ret.d_name) + strlen(ret.d_name);
+    if (cur_len + sizeof(ret) > len) {
+      iunlock(dp);
+      return -1;
+    }
+    copyout(p->pagetable, buf + cur_len, &ret, sizeof(ret));
+  }
+  iunlock(dp);
+  return cur_len;
 }
 
 uint64
