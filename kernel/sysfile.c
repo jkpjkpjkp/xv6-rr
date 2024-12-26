@@ -66,6 +66,12 @@ sys_dup(void)
 }
 
 uint64
+sys_dup2(void)
+{
+  panic("TODO");
+}
+
+uint64
 sys_read(void)
 {
   struct file *f;
@@ -428,6 +434,73 @@ sys_chdir(void)
   iput(p->cwd);
   end_op();
   p->cwd = ip;
+  return 0;
+}
+
+uint64
+sys_getdir(void)
+{
+  char path[MAXPATH];
+  struct inode *ip;
+  struct proc *p = myproc();
+  ip = p->cwd;
+  argaddr(0, (uint64*)path);
+  
+  // written by claude3.5 (method design by jkp)
+  char name[DIRSIZ];
+  char *curr = path;
+  struct inode *next;
+  int len = 0;
+  char fullpath[MAXPATH] = "";
+  char temppath[MAXPATH] = "";
+
+  // Special case for root directory
+  if(ip->inum == ROOTINO) {
+    if(copyout(p->pagetable, (uint64)path, "/", 2) < 0)
+      return -1;
+    return 0;
+  }
+
+  // Travel up to root while building path
+  while(ip->inum != ROOTINO) {
+    ilock(ip);
+    // Look for ".." entry to get parent directory
+    if((next = dirlookup(ip, "..", 0)) == 0) {
+      iunlockput(ip);
+      return -1;
+    }
+    
+    ilock(next);
+    // Search through parent directory for current directory's name
+    struct dirent de;
+    for(int off = 0; off < next->size; off += sizeof(de)) {
+      if(readi(next, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+        continue;
+      if(de.inum == ip->inum) {
+        // Prepend this directory name to path
+        memmove(temppath, "/", 1);
+        memmove(temppath + 1, de.name, DIRSIZ);
+        memmove(temppath + strlen(temppath), fullpath, strlen(fullpath));
+        memmove(fullpath, temppath, MAXPATH);
+        break;
+      }
+    }
+    
+    iunlockput(ip);
+    ip = next;
+  }
+  iunlockput(ip);
+
+  // If path is empty (shouldn't happen), return root
+  if(strlen(fullpath) == 0) {
+    if(copyout(p->pagetable, (uint64)path, "/", 2) < 0)
+      return -1;
+    return 0;
+  }
+
+  // Copy full path to user space
+  if(copyout(p->pagetable, (uint64)path, fullpath, strlen(fullpath) + 1) < 0)
+    return -1;
   return 0;
 }
 
