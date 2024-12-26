@@ -66,6 +66,65 @@ fdalloc3(struct file *f, int fd)
   }
 }
 
+// returns strlen(buf) on success
+int 
+pwd(char *buf) {
+  struct inode *ip;
+  struct proc *p = myproc();
+  ip = p->cwd;
+  
+  char name[DIRSIZ];
+  struct inode *next;
+  int len = 0;
+  char fullpath[MAXPATH] = "";
+  char temppath[MAXPATH] = "";
+
+  // Special case for root directory
+  if(ip->inum == ROOTINO) {
+    *buf = "/";
+    return 1;
+  }
+
+  // Travel up to root while building path
+  while(ip->inum != ROOTINO) {
+    ilock(ip);
+    // Look for ".." entry to get parent directory
+    if((next = dirlookup(ip, "..", 0)) == 0) {
+      iunlockput(ip);
+      panic("[pwd] .. not found in non-/ dir");
+    }
+    
+    ilock(next);
+    // Search through parent directory for current directory's name
+    struct dirent de;
+    for(int off = 0; off < next->size; off += sizeof(de)) {
+      if(readi(next, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+        continue;
+      if(de.inum == ip->inum) {
+        // Prepend this directory name to path
+        memmove(temppath, "/", 1);
+        memmove(temppath + 1, de.name, DIRSIZ);
+        memmove(temppath + strlen(temppath), fullpath, strlen(fullpath));
+        memmove(fullpath, temppath, MAXPATH);
+        break;
+      }
+    }
+    
+    iunlockput(ip);
+    ip = next;
+  }
+  iunlockput(ip);
+
+  // If path is empty (shouldn't happen), return root
+  if(strlen(fullpath) == 0) {
+    panic("[pwd] path is empty");
+  }
+
+  int ret = strlen(fullpath);
+  safestrcpy(buf, fullpath, ret);
+  return ret;
+}
+
 uint64
 sys_dup(void)
 {
@@ -400,28 +459,21 @@ sys_open(void)
 }
 
 uint64
-sys_openat(void) // TODO: undone!
+sys_openat(void)
 {
-  int fd;
-  char path[MAXPATH];
-  int flags, omode;
+  int fd, n;
+  char path[MAXPATH], fullpath[MAXPATH];
   struct file *f;
   struct inode *ip;
-  int n;
 
   argint(0, &fd);
-  argint(2, &flags);
-  argint(3, &omode); // TODO: check flags and mode detailed meaning, and if same w/ omode in xv6
-  // Get arguments
   if(argstr(1, path, MAXPATH) < 0)
     return -1;
 
-  // If path is absolute, ignore fd
   if(path[0] == '/' || fd == -100) {
-    // Move path from arg1 to arg0 position to match sys_open() layout
     struct proc *p = myproc();
-    p->trapframe->a0 = p->trapframe->a1;  // Move flags to arg1
-    p->trapframe->a1 = p->trapframe->a3;  // Move mode to arg2
+    p->trapframe->a0 = p->trapframe->a1;
+    p->trapframe->a1 = p->trapframe->a2;
     return sys_open();
   }
 
@@ -431,24 +483,13 @@ sys_openat(void) // TODO: undone!
   if(f->type != FD_INODE || !(f->ip->type == T_DIR))
     return -1;
 
-  // Prepend fd's path to the relative path
-  char fullpath[MAXPATH];
-  ilock(f->ip);
-  n = inode_path(f->ip, fullpath, MAXPATH); // TODO: use sys_getcwd
-  iunlock(f->ip);
-  if(n < 0)
-    return -1;
-  
-  if(n + strlen(path) + 2 > MAXPATH)
-    return -1;
-    
-  if(n > 1) {  // Add slash if not root dir
-    fullpath[n++] = '/';
-  }
+  n = pwd(fullpath);
   strncpy(fullpath + n, path, MAXPATH - n);
 
-  // Call regular open with constructed full path
   safestrcpy(path, fullpath, MAXPATH);
+  struct proc *p = myproc();
+  p->trapframe->a0 = p->trapframe->a1;
+  p->trapframe->a1 = p->trapframe->a2;
   return sys_open();
 }
 
@@ -514,68 +555,16 @@ sys_chdir(void)
 }
 
 uint64
-sys_getdir(void)
+sys_getcwd(void)
 {
-  char path[MAXPATH];
-  struct inode *ip;
-  struct proc *p = myproc();
-  ip = p->cwd;
-  argaddr(0, (uint64*)path);
-  
-  // written by claude3.5 (method design by jkp)
-  char name[DIRSIZ];
-  char *curr = path;
-  struct inode *next;
-  int len = 0;
+  uint64 buf;
+  argaddr(0, &buf);
   char fullpath[MAXPATH] = "";
-  char temppath[MAXPATH] = "";
+  pwd(fullpath);
 
-  // Special case for root directory
-  if(ip->inum == ROOTINO) {
-    if(copyout(p->pagetable, (uint64)path, "/", 2) < 0)
-      return -1;
-    return 0;
-  }
-
-  // Travel up to root while building path
-  while(ip->inum != ROOTINO) {
-    ilock(ip);
-    // Look for ".." entry to get parent directory
-    if((next = dirlookup(ip, "..", 0)) == 0) {
-      iunlockput(ip);
-      return -1;
-    }
-    
-    ilock(next);
-    // Search through parent directory for current directory's name
-    struct dirent de;
-    for(int off = 0; off < next->size; off += sizeof(de)) {
-      if(readi(next, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
-        continue;
-      if(de.inum == ip->inum) {
-        // Prepend this directory name to path
-        memmove(temppath, "/", 1);
-        memmove(temppath + 1, de.name, DIRSIZ);
-        memmove(temppath + strlen(temppath), fullpath, strlen(fullpath));
-        memmove(fullpath, temppath, MAXPATH);
-        break;
-      }
-    }
-    
-    iunlockput(ip);
-    ip = next;
-  }
-  iunlockput(ip);
-
-  // If path is empty (shouldn't happen), return root
-  if(strlen(fullpath) == 0) {
-    if(copyout(p->pagetable, (uint64)path, "/", 2) < 0)
-      return -1;
-    return 0;
-  }
-
+  struct proc *p = myproc();
   // Copy full path to user space
-  if(copyout(p->pagetable, (uint64)path, fullpath, strlen(fullpath) + 1) < 0)
+  if(copyout(p->pagetable, buf, fullpath, strlen(fullpath) + 1) < 0)
     return -1;
   return 0;
 }
