@@ -51,6 +51,21 @@ fdalloc(struct file *f)
   return -1;
 }
 
+static int
+fdalloc3(struct file *f, int fd)
+{
+  if(fd < 0 || fd >= NOFILE)
+    return -1;
+  struct proc *p = myproc();
+
+  if(p->ofile[fd] == 0){
+    p->ofile[fd] = f;
+    return fd;
+  }else{
+    return -1;
+  }
+}
+
 uint64
 sys_dup(void)
 {
@@ -66,9 +81,17 @@ sys_dup(void)
 }
 
 uint64
-sys_dup2(void)
+sys_dup3(void)
 {
-  panic("TODO");
+  struct file *f;
+  int fd;
+
+  if(argfd(0, 0, &f) < 0)
+    return -1;
+  if((fd=fdalloc(f)) < 0)
+    return -1;
+  filedup(f);
+  return fd;
 }
 
 uint64
@@ -374,6 +397,59 @@ sys_open(void)
   end_op();
 
   return fd;
+}
+
+uint64
+sys_openat(void) // TODO: undone!
+{
+  int fd;
+  char path[MAXPATH];
+  int flags, omode;
+  struct file *f;
+  struct inode *ip;
+  int n;
+
+  argint(0, &fd);
+  argint(2, &flags);
+  argint(3, &omode); // TODO: check flags and mode detailed meaning, and if same w/ omode in xv6
+  // Get arguments
+  if(argstr(1, path, MAXPATH) < 0)
+    return -1;
+
+  // If path is absolute, ignore fd
+  if(path[0] == '/' || fd == -100) {
+    // Move path from arg1 to arg0 position to match sys_open() layout
+    struct proc *p = myproc();
+    p->trapframe->a0 = p->trapframe->a1;  // Move flags to arg1
+    p->trapframe->a1 = p->trapframe->a3;  // Move mode to arg2
+    return sys_open();
+  }
+
+  if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
+    return -1;
+
+  if(f->type != FD_INODE || !(f->ip->type == T_DIR))
+    return -1;
+
+  // Prepend fd's path to the relative path
+  char fullpath[MAXPATH];
+  ilock(f->ip);
+  n = inode_path(f->ip, fullpath, MAXPATH); // TODO: use sys_getcwd
+  iunlock(f->ip);
+  if(n < 0)
+    return -1;
+  
+  if(n + strlen(path) + 2 > MAXPATH)
+    return -1;
+    
+  if(n > 1) {  // Add slash if not root dir
+    fullpath[n++] = '/';
+  }
+  strncpy(fullpath + n, path, MAXPATH - n);
+
+  // Call regular open with constructed full path
+  safestrcpy(path, fullpath, MAXPATH);
+  return sys_open();
 }
 
 uint64
