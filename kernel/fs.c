@@ -189,7 +189,6 @@ iinit()
   }
 }
 
-static struct inode* iget(uint dev, uint inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
@@ -244,7 +243,7 @@ iupdate(struct inode *ip)
 // Find the inode with number inum on device dev
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
-static struct inode*
+struct inode*
 iget(uint dev, uint inum)
 {
   struct inode *ip, *empty;
@@ -644,6 +643,55 @@ skipelem(char *path, char *name)
   while(*path == '/')
     path++;
   return path;
+}
+
+/// @brief finds inode for abs or relative path
+/// @param fd (optional) parent dir (tmp working dir) fd
+/// @param path abs or relative path. if abs, `fd` is ignored. if path==0, return file[fd]->ip
+/// @return retrieved inode
+struct inode*
+namefd(int fd, int nameiparent, char *path)
+{
+  struct inode *ip, *next;
+  struct file *f;
+  char name[DIRSIZ];
+  if(!path){
+    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+      return 0;
+    return f->ip;
+  }
+  if(*path == '/')
+    ip = iget(ROOTDEV, ROOTINO);
+  else{
+    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+      return 0;
+    ip = f->ip;
+  }
+
+  // copied from `static struct inode* namex(`
+  while((path = skipelem(path, name)) != 0){
+    ilock(ip);
+    if(ip->type != T_DIR){
+      iunlockput(ip);
+      return 0;
+    }
+    if(nameiparent && *path == '\0'){
+      // Stop one level early.
+      iunlock(ip);
+      return ip;
+    }
+    if((next = dirlookup(ip, name, 0)) == 0){
+      iunlockput(ip);
+      return 0;
+    }
+    iunlockput(ip);
+    ip = next;
+  }
+  if(nameiparent){
+    iput(ip);
+    return 0;
+  }
+  return ip;
 }
 
 // Look up and return the inode for a path name.

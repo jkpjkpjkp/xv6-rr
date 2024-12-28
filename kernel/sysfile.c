@@ -51,20 +51,20 @@ fdalloc(struct file *f)
   return -1;
 }
 
-static int
-fdalloc3(struct file *f, int fd)
-{
-  if(fd < 0 || fd >= NOFILE)
-    return -1;
-  struct proc *p = myproc();
+// static int
+// fdalloc3(struct file *f, int fd)
+// {
+//   if(fd < 0 || fd >= NOFILE)
+//     return -1;
+//   struct proc *p = myproc();
 
-  if(p->ofile[fd] == 0){
-    p->ofile[fd] = f;
-    return fd;
-  }else{
-    return -1;
-  }
-}
+//   if(p->ofile[fd] == 0){
+//     p->ofile[fd] = f;
+//     return fd;
+//   }else{
+//     return -1;
+//   }
+// }
 
 // returns strlen(buf) on success
 int 
@@ -74,15 +74,13 @@ pwd(char *buf)
   struct proc *p = myproc();
   ip = p->cwd;
   
-  char name[DIRSIZ];
   struct inode *next;
-  int len = 0;
   char fullpath[MAXPATH] = "";
   char temppath[MAXPATH] = "";
 
   // Special case for root directory
   if(ip->inum == ROOTINO) {
-    *buf = "/";
+    buf = "/";
     return 1;
   }
 
@@ -126,59 +124,58 @@ pwd(char *buf)
   return ret;
 }
 
-/// @brief finds inode for abs or relative path
-/// @param fd (optional) parent dir (tmp working dir) fd
-/// @param path abs or relative path. if abs, `fd` is ignored. if path==0, return file[fd]->ip
-/// @return retrieved inode
-struct inode*
-namefd(int fd, int nameiparent, char *path)
+uint64
+mount(char *source, char *target, const char *fstype, unsigned long flags)
 {
-  struct inode *ip, *next;
-  struct file *f;
-  char *name;
-  if(!path){
-    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
-      return 0;
-    return f->ip;
-  }
-  if(*path == '/')
-    ip = iget(ROOTDEV, ROOTINO);
-  else{
-    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
-      return 0;
-    ip = f->ip;
+  panic("TODO");
+  struct inode *ip1, *ip2;
+  char name[DIRSIZ];
+  uint dev;
+  begin_op();
+  
+  if((ip1 = namei(source)) == 0){
+    end_op();
+    return -1;
   }
 
-  // copied from `static struct inode* namex(`
-  while((path = skipelem(path, name)) != 0){
-    ilock(ip);
-    if(ip->type != T_DIR){
-      iunlockput(ip);
-      return 0;
-    }
-    if(nameiparent && *path == '\0'){
-      // Stop one level early.
-      iunlock(ip);
-      return ip;
-    }
-    if((next = dirlookup(ip, name, 0)) == 0){
-      iunlockput(ip);
-      return 0;
-    }
-    iunlockput(ip);
-    ip = next;
+  ilock(ip1);
+  if(ip1->inum != ROOTINO){
+    iunlock(ip1);
+    end_op();
+    return -1;
   }
-  if(nameiparent){
-    iput(ip);
-    return 0;
+
+  dev = ip1->dev;
+  iunlock(ip1);
+
+  ip2 = nameiparent(target, name);
+  if(ip2 == 0){
+    end_op();
+    return -1;
   }
-  return ip;
+
+  ilock(ip2);
+  if(ip2->type != T_DIR){
+    iunlockput(ip2);
+    end_op();
+    return -1;
+  }
+
+  if(dirlink(ip2, name, ip1->inum) < 0){
+    iunlockput(ip2);
+    end_op();
+    return -1;
+  }
+
+  iunlockput(ip2);
+  end_op();
+  return dev;
 }
 
 uint64
 sys_mount(void)
 {
-  
+  panic("TODO");
 }
 
 uint64
@@ -580,7 +577,6 @@ sys_openat(void) // TODO: double check the O_CREATE is set as always on
   int fd, n;
   char path[MAXPATH], fullpath[MAXPATH];
   struct file *f;
-  struct inode *ip;
 
   argint(0, &fd);
   if(argstr(1, path, MAXPATH) < 0)
@@ -711,7 +707,7 @@ sys_getdents64(void)
   argaddr(1, &buf);
   argint(2, &len);
 
-  struct proc *p = myproc();
+  p = myproc();
   if (fd < 0 || fd >= NOFILE || (f = p->ofile[fd]) == 0)
     return -1;
 
@@ -741,7 +737,7 @@ sys_getdents64(void)
       iunlock(dp);
       return -1;
     }
-    copyout(p->pagetable, buf + cur_len, &ret, sizeof(ret));
+    copyout(p->pagetable, buf + cur_len, (char *) &ret, sizeof(ret));
   }
   iunlock(dp);
   return cur_len;

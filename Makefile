@@ -1,6 +1,10 @@
 K=kernel
 U=user
 
+FAT32_SRC = fat32/ff.c fat32/ffsystem.c fat32/ffunicode.c fat32/diskio.c
+
+
+
 OBJS = \
   $K/entry.o \
   $K/start.o \
@@ -28,7 +32,8 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o
+  $K/virtio_disk.o \
+  $(FAT32_SRC:.c=.o)
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -68,6 +73,7 @@ CFLAGS += -fno-builtin-free
 CFLAGS += -fno-builtin-memcpy -Wno-main
 CFLAGS += -fno-builtin-printf -fno-builtin-fprintf -fno-builtin-vprintf
 CFLAGS += -I.
+CFLAGS += -Ifat32
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
