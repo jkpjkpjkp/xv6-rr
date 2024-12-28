@@ -131,7 +131,7 @@ recover_from_log(void)
 
 // called at the start of each FS system call.
 void
-begin_op(int dev)
+_begin_op(int dev)
 {
   acquire(&log[dev].lock);
   while(1){
@@ -148,10 +148,17 @@ begin_op(int dev)
   }
 }
 
+void
+begin_op(void)
+{
+  _begin_op(1);
+  _begin_op(2);
+}
+
 // called at the end of each FS system call.
 // commits if this was the last outstanding operation.
 void
-end_op(int dev)
+_end_op(int dev)
 {
   int do_commit = 0;
 
@@ -179,6 +186,13 @@ end_op(int dev)
     wakeup(&log[dev]);
     release(&log[dev].lock);
   }
+}
+
+void
+end_op(void)
+{
+  _end_op(1);
+  _end_op(2);
 }
 
 // Copy modified blocks from cache to log.

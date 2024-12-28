@@ -67,8 +67,8 @@ void            kinit(void);
 // log.c
 void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
-void            begin_op(int);
-void            end_op(int);
+void            begin_op();
+void            end_op();
 
 // pipe.c
 int             pipealloc(struct file**, struct file**);
