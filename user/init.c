@@ -74,5 +74,5 @@ main(int argc, char *argv[])
       // Wait for the specific child
     }
   }
-  exit(0);
+  shutdown();
 }
