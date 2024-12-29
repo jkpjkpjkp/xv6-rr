@@ -711,7 +711,8 @@ namex(char *path, int nameiparent, char *name)
   while((path = skipelem(path, name)) != 0){
     ilock(ip);
     if(ip->type == T_DEVICE){ // mount point
-      ip = iget(ip->dev, ROOTINO);
+      safestrcpy(name, path, MAXPATH);
+      return ip;
     }
 
     if(ip->type != T_DIR){

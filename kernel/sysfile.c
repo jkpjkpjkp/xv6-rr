@@ -127,7 +127,6 @@ pwd(char *buf)
 uint64
 mount(char *source, char *target, const char *fstype, unsigned long flags)
 {
-  panic("TODO");
   struct inode *ip1, *ip2;
   char name[DIRSIZ];
   uint dev;

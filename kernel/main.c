@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+#include "fat32/ff.h"
 
 volatile static int started = 0;
 
@@ -31,6 +32,7 @@ main()
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
+    init_fat32();
   } else {
     while(started == 0)
       ;
@@ -42,4 +44,15 @@ main()
   }
 
   scheduler();        
+}
+
+void init_fat32() {
+    FATFS fs;
+    FRESULT res;
+
+    // Mount the FAT32 file system
+    res = f_mount(&fs, "", 1);
+    if (res != FR_OK) {
+        panic("Failed to mount FAT32 file system");
+    }
 }
