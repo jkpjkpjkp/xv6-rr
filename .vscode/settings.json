@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "elf.h": "c",
-        "defs.h": "c"
+        "defs.h": "c",
+        "inode.h": "c"
     }
 }

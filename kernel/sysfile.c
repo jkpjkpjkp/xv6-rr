@@ -185,6 +185,7 @@ sys_dup(void)
 
   if(argfd(0, 0, &f) < 0)
     return -1;
+
   if((fd=fdalloc(f)) < 0)
     return -1;
   filedup(f);
@@ -442,7 +443,7 @@ sys_unlinkat(void)
   panic("TODO");
 }
 
-static struct inode*
+struct inode*
 create(char *path, short type, short major, short minor)
 {
   struct inode *ip, *dp;

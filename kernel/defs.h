@@ -143,6 +143,9 @@ int             fetchstr(uint64, char*, int);
 int             fetchaddr(uint64, uint64*);
 void            syscall();
 
+// sysfile.c
+struct inode*   create(char *path, short type, short major, short minor);
+
 // trap.c
 extern uint     ticks;
 void            trapinit(void);
@@ -189,3 +192,4 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
