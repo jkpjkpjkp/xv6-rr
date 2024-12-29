@@ -710,11 +710,6 @@ namex(char *path, int nameiparent, char *name)
 
   while((path = skipelem(path, name)) != 0){
     ilock(ip);
-    if(ip->type == T_DEVICE){ // mount point
-      safestrcpy(name, path, MAXPATH);
-      return ip;
-    }
-
     if(ip->type != T_DIR){
       iunlockput(ip);
       return 0;
