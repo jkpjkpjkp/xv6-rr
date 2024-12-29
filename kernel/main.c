@@ -32,16 +32,18 @@ main()
     procinit();      // process table
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector
+    printf("DEBUG: Starting plicinit\n");
     plicinit();      // set up interrupt controller
     plicinithart();  // ask PLIC for device interrupts
     binit();         // buffer cache
     iinit();         // inode table
     fileinit();      // file table
+    printf("DEBUG: Starting virtio_disk_init\n");
     virtio_disk_init(); // emulated hard disk
-    init_fat_copy();
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
+
   } else {
     while(started == 0)
       ;
@@ -50,6 +52,11 @@ main()
     kvminithart();    // turn on paging
     trapinithart();   // install kernel trap vector
     plicinithart();   // ask PLIC for device interrupts
+
+    if(cpuid() == 1){
+      init_fat_copy();
+      userinit2();
+    }
   }
 
   scheduler();        
@@ -140,12 +147,14 @@ void
 init_fat_copy(void) {
   // Create destination directory if it doesn't exist
   begin_op();
+
+  printf("[init_fat_copy] create starting\n");
   struct inode *ip = create("/sdcard", T_DIR, 0, 0, 0);
   if(ip != 0) {
     iunlockput(ip);
   }
   end_op();
-
+  printf("[init_fat_copy] copy starting\n");
   // Copy files from FAT32 to xv6 fs
   copy_fat_to_xv6("/", "/sdcard");
 }

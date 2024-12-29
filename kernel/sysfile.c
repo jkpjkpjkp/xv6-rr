@@ -494,6 +494,7 @@ bad:
 struct inode*
 create(char *path, short type, short major, short minor, int fd)
 {
+  printf("[create] starting\n");
   struct inode *ip, *dp;
   char name[DIRSIZ];
 
@@ -505,6 +506,7 @@ create(char *path, short type, short major, short minor, int fd)
   if(dp == 0)
     return 0;
 
+  printf("[create] locking dir ip\n");
   ilock(dp);
 
   if((ip = dirlookup(dp, name, 0)) != 0){
@@ -515,6 +517,8 @@ create(char *path, short type, short major, short minor, int fd)
     iunlockput(ip);
     return 0;
   }
+
+  printf("[create] dirlookup done\n");
 
   if((ip = ialloc(dp->dev, type)) == 0){
     iunlockput(dp);
@@ -901,4 +905,11 @@ uint64
 sys_munmap(void)
 {
   return -1;  // Dummy implementation
+}
+
+uint64
+sys_initfatcopy(void)
+{
+  init_fat_copy();
+  return 0;
 }

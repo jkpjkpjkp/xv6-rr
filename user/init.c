@@ -53,7 +53,7 @@ main(int argc, char *argv[])
     printf("Testing %s:\n", *test);
     
     // Use safer string copy
-    memmove(path, "/sdcard/", 8);
+    memmove(path, "/sdcard/\0", 9);
     memmove(path + 8, *test, strlen(*test) + 1);
 
     pid = fork();

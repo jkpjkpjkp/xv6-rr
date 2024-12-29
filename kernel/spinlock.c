@@ -46,6 +46,9 @@ acquire(struct spinlock *lk)
 void
 release(struct spinlock *lk)
 {
+  if(lk == 0)
+    panic("release: null lock");
+
   if(!holding(lk))
     panic("release");
 

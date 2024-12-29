@@ -291,15 +291,18 @@ idup(struct inode *ip)
 void
 ilock(struct inode *ip)
 {
+  printf("[ilock] starting\n");
   struct buf *bp;
   struct dinode *dip;
 
   if(ip == 0 || ip->ref < 1)
     panic("ilock");
+  printf("[ilock] mid\n");
 
   acquiresleep(&ip->lock);
 
   if(ip->valid == 0){
+    printf("[ilock] ip invalid\n");
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
     dip = (struct dinode*)bp->data + ip->inum%IPB;
     ip->type = dip->type;
@@ -313,6 +316,7 @@ ilock(struct inode *ip)
     if(ip->type == 0)
       panic("ilock: no type");
   }
+  printf("[ilock] done\n");
 }
 
 // Unlock the given inode.
@@ -698,19 +702,24 @@ namefd(int fd, int nameiparent, char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name)
 {
+  printf("[namex] starting\n");
   struct inode *ip, *next;
 
   if(*path == '/')
     ip = iget(ROOTDEV, ROOTINO);
   else
     ip = idup(myproc()->cwd);
+  printf("%d %d\n", ip->dev, ip->inum);
 
   while((path = skipelem(path, name)) != 0){
+    printf("[namex] skipelem\n");
     ilock(ip);
+    printf("[namex] locked\n");
     if(ip->type != T_DIR){
       iunlockput(ip);
       return 0;
     }
+    printf("[namex] mid while\n");
     if(nameiparent && *path == '\0'){
       // Stop one level early.
       iunlock(ip);
@@ -720,6 +729,7 @@ namex(char *path, int nameiparent, char *name)
       iunlockput(ip);
       return 0;
     }
+    printf("[namex] unlocking\n");
     iunlockput(ip);
     ip = next;
   }
@@ -727,6 +737,7 @@ namex(char *path, int nameiparent, char *name)
     iput(ip);
     return 0;
   }
+  printf("[namex] return normally\n");
   return ip;
 }
 

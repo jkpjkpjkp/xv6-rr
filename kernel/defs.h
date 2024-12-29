@@ -56,6 +56,9 @@ void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, int, uint64, uint, uint);
 void            itrunc(struct inode*);
 
+// main.c
+void            init_fat_copy(void);
+
 // ramdisk.c
 void            ramdiskinit(void);
 void            ramdiskintr(void);
@@ -102,6 +105,7 @@ void            scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
+void            userinit2(void);
 int             wait(uint64);
 void            wakeup(void*);
 void            yield(void);
