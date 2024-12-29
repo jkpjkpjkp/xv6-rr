@@ -4,6 +4,7 @@
 #define SYS_exit    93
 #define SYS_wait    3
 #define SYS_pipe2   59
+#define SYS_pipe    SYS_pipe2
 #define SYS_read    63
 #define SYS_kill    6
 #define SYS_exec    7

@@ -5,6 +5,7 @@
 // qemu ... -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 //
 
+#include "virtio_disk.h"
 #include "types.h"
 #include "riscv.h"
 #include "defs.h"
@@ -324,4 +325,78 @@ virtio_disk_intr()
   }
 
   release(&disk.vdisk_lock);
+}
+
+
+DSTATUS disk_status(BYTE pdrv) {
+    // Check if the disk is initialized and return status
+    if (pdrv != 0) return STA_NOINIT; // Only support one drive
+    return 0; // Disk is initialized
+}
+
+DSTATUS disk_initialize(BYTE pdrv) {
+    if (pdrv != 0) return STA_NOINIT; // Only support one drive
+    virtio_disk_init(); // Initialize the virtio disk
+    return 0; // Initialization successful
+}
+
+DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
+    if (pdrv != 0) return RES_PARERR; // Only support one drive
+
+    struct buf b;
+    memmove(b.data, buff, BSIZE);
+    b.blockno = sector;
+    b.disk = 0;
+
+    for (UINT i = 0; i < count; i++) {
+        virtio_disk_rw(&b, 0); // Read operation
+        b.blockno++;
+        buff += BSIZE;
+    }
+    return RES_OK;
+}
+
+DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
+    if (pdrv != 0) return RES_PARERR; // Only support one drive
+
+    struct buf b;
+    memmove(b.data, buff, BSIZE);
+    b.blockno = sector;
+    b.disk = 0;
+
+    for (UINT i = 0; i < count; i++) {
+        virtio_disk_rw(&b, 1); // Write operation
+        b.blockno++;
+        buff += BSIZE;
+    }
+    return RES_OK;
+}
+
+DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
+    if (pdrv != 0) return RES_PARERR; // Only support one drive
+
+    switch (cmd) {
+        case CTRL_SYNC:
+            // Ensure all write operations are completed
+            return RES_OK;
+        case GET_SECTOR_COUNT:
+            // Return the total number of sectors
+            *(DWORD *)buff = TOTAL_SECTORS;
+            return RES_OK;
+        case GET_SECTOR_SIZE:
+            // Return the sector size
+            *(WORD *)buff = BSIZE;
+            return RES_OK;
+        case GET_BLOCK_SIZE:
+            // Return the block size
+            *(DWORD *)buff = 1; // Assuming no erase block
+            return RES_OK;
+        default:
+            return RES_PARERR;
+    }
+}
+
+DWORD get_fattime(void) {
+    // Return a fixed time for simplicity
+    return ((DWORD)(2023 - 1980) << 25) | ((DWORD)10 << 21) | ((DWORD)1 << 16);
 }
