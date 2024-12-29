@@ -144,7 +144,7 @@ int             fetchaddr(uint64, uint64*);
 void            syscall();
 
 // sysfile.c
-struct inode*   create(char *path, short type, short major, short minor);
+struct inode*   create(char *path, short type, short major, short minor, int fd);
 
 // trap.c
 extern uint     ticks;

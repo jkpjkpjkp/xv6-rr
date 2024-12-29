@@ -652,7 +652,6 @@ namefd(int fd, int nameiparent, char *path, char *name)
 {
   struct inode *ip, *next;
   struct file *f;
-  char name[DIRSIZ];
   if(!path){
     if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
       return 0;

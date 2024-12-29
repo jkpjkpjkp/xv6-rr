@@ -172,12 +172,6 @@ mount(char *source, char *target, const char *fstype, unsigned long flags)
 }
 
 uint64
-sys_mount(void)
-{
-  panic("TODO");
-}
-
-uint64
 sys_dup(void)
 {
   struct file *f;
@@ -440,7 +434,61 @@ bad:
 uint64
 sys_unlinkat(void)
 {
-  panic("TODO");
+  int dirfd;
+  struct inode *ip, *dp;
+  struct dirent de;
+  char name[DIRSIZ], path[MAXPATH];
+  uint off;
+
+  argint(0, &dirfd);
+  if(argstr(1, path, MAXPATH) < 0)
+    return -1;
+
+  begin_op();
+  if((dp = namefd(dirfd, 1, path, name)) == 0){
+    end_op();
+    return -1;
+  }
+
+  // hereon copied from sys_unlink and unmodified. 
+  ilock(dp);
+
+  // Cannot unlink "." or "..".
+  if(namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
+    goto bad;
+
+  if((ip = dirlookup(dp, name, &off)) == 0)
+    goto bad;
+  ilock(ip);
+
+  if(ip->nlink < 1)
+    panic("unlink: nlink < 1");
+  if(ip->type == T_DIR && !isdirempty(ip)){
+    iunlockput(ip);
+    goto bad;
+  }
+
+  memset(&de, 0, sizeof(de));
+  if(writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
+    panic("unlink: writei");
+  if(ip->type == T_DIR){
+    dp->nlink--;
+    iupdate(dp);
+  }
+  iunlockput(dp);
+
+  ip->nlink--;
+  iupdate(ip);
+  iunlockput(ip);
+
+  end_op();
+
+  return 0;
+
+bad:
+  iunlockput(dp);
+  end_op();
+  return -1;
 }
 
 struct inode*
@@ -811,12 +859,6 @@ sys_exec(void)
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)
     kfree(argv[i]);
   return -1;
-}
-
-uint64
-sys_execve(void)
-{
-
 }
 
 uint64

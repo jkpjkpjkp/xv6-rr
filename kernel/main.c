@@ -103,7 +103,7 @@ copy_fat_to_xv6(const char *fat_path, const char *xv6_path) {
 
       // Create destination file
       begin_op();
-      dst_ip = create(dst_path, T_FILE, 0, 0);
+      dst_ip = create(dst_path, T_FILE, 0, 0, 0);
       if (dst_ip == 0) {
         printf("xv6fs: cannot create %s\n", dst_path);
         f_close(&fsrc);
@@ -140,7 +140,7 @@ void
 init_fat_copy(void) {
   // Create destination directory if it doesn't exist
   begin_op();
-  struct inode *ip = create("/sdcard", T_DIR, 0, 0);
+  struct inode *ip = create("/sdcard", T_DIR, 0, 0, 0);
   if(ip != 0) {
     iunlockput(ip);
   }

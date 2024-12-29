@@ -146,7 +146,6 @@ static uint64 (*syscalls[])(void) = {
 [SYS_mkdirat] sys_mkdirat,
 // [SYS_mount]   sys_mount,
 // [SYS_umount2] sys_umount2,
-[SYS_execve]  sys_execve,
 [SYS_wait4]   sys_wait4,
 [SYS_mmap]    sys_mmap,
 [SYS_munmap]  sys_munmap,
