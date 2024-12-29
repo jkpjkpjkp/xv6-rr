@@ -15,14 +15,20 @@ void
 main()
 {
   if(cpuid() == 0){
+    printf("DEBUG: Starting console init\n");
     consoleinit();
+    printf("DEBUG: Console initialized\n");
     printfinit();
     printf("\n");
     printf("xv6 kernel is booting\n");
     printf("\n");
+    printf("DEBUG: Starting kinit\n");
     kinit();         // physical page allocator
+    printf("DEBUG: Starting kvminit\n");
     kvminit();       // create kernel page table
+    printf("DEBUG: Starting kvminithart\n");
     kvminithart();   // turn on paging
+    printf("DEBUG: Starting procinit\n");
     procinit();      // process table
     trapinit();      // trap vectors
     trapinithart();  // install kernel trap vector
