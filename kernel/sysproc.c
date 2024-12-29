@@ -8,10 +8,16 @@
 
 void
 sys_shutdown(void)
-{ // TODO not right. fine sbi shutdown. 
-  // Shutdown the system by writing to the TEST register
-  // This is specific to QEMU's RISC-V virt machine
-  *(uint32*)0x100000 = 0x5555; 
+{
+  // Use SBI SRST (System Reset) extension to shutdown
+  // SBI_SYSTEM_RESET = 0x53525354 (ASCII "SRST")
+  // Type = 0 for shutdown
+  // Reason = 0 for normal shutdown
+  asm volatile("li a7, 0x53525354"); // SBI SRST extension
+  asm volatile("li a0, 0"); // Type = shutdown
+  asm volatile("li a1, 0"); // Reason = normal
+  asm volatile("ecall");
+  panic("shutdown reached end");
 }
 
 uint64

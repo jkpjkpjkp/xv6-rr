@@ -324,7 +324,7 @@ sys_linkat(void) // UNDONE! name[] not populated.
     return -1;
 
   begin_op();
-  if((ip = namefd(olddirfd, 0, old)) == 0){
+  if((ip = namefd(olddirfd, 0, old, 0)) == 0){
     end_op();
     return -1;
   }
@@ -340,7 +340,7 @@ sys_linkat(void) // UNDONE! name[] not populated.
   iupdate(ip);
   iunlock(ip);
 
-  if((dp = namefd(newdirfd, 1, new)) == 0)
+  if((dp = namefd(newdirfd, 1, new, name)) == 0)
     goto bad;
   ilock(dp);
   if(dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0){
@@ -444,12 +444,17 @@ sys_unlinkat(void)
 }
 
 struct inode*
-create(char *path, short type, short major, short minor)
+create(char *path, short type, short major, short minor, int fd)
 {
   struct inode *ip, *dp;
   char name[DIRSIZ];
 
-  if((dp = nameiparent(path, name)) == 0)
+  if(fd > 0)
+    dp = namefd(fd, 1, path, name);
+  else
+    dp = nameiparent(path, name);
+
+  if(dp == 0)
     return 0;
 
   ilock(dp);
@@ -518,7 +523,7 @@ sys_open(void)
   begin_op();
 
   if(omode & O_CREATE){
-    ip = create(path, T_FILE, 0, 0);
+    ip = create(path, T_FILE, 0, 0, 0);
     if(ip == 0){
       end_op();
       return -1;
@@ -612,7 +617,29 @@ sys_mkdir(void)
   struct inode *ip;
 
   begin_op();
-  if(argstr(0, path, MAXPATH) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0){
+  if(argstr(0, path, MAXPATH) < 0 || (ip = create(path, T_DIR, 0, 0, 0)) == 0){
+    end_op();
+    return -1;
+  }
+  iunlockput(ip);
+  end_op();
+  return 0;
+}
+
+uint64
+sys_mkdirat(void)
+{
+  int dirfd;
+  char path[MAXPATH];
+  struct inode *ip;
+
+
+  argint(0, &dirfd);
+  if(argstr(1, path, MAXPATH) < 0)
+    return -1;
+  
+  begin_op();
+  if((ip = create(path, T_DIR, 0, 0, dirfd)) == 0){
     end_op();
     return -1;
   }
@@ -632,7 +659,7 @@ sys_mknod(void)
   argint(1, &major);
   argint(2, &minor);
   if((argstr(0, path, MAXPATH)) < 0 ||
-     (ip = create(path, T_DEVICE, major, minor)) == 0){
+     (ip = create(path, T_DEVICE, major, minor, 0)) == 0){
     end_op();
     return -1;
   }
@@ -787,6 +814,12 @@ sys_exec(void)
 }
 
 uint64
+sys_execve(void)
+{
+
+}
+
+uint64
 sys_pipe(void)
 {
   uint64 fdarray; // user pointer to array of two integers
@@ -814,12 +847,6 @@ sys_pipe(void)
     return -1;
   }
   return 0;
-}
-
-uint64
-sys_mkdirat(void)
-{
-  return -1;  // Dummy implementation
 }
 
 uint64

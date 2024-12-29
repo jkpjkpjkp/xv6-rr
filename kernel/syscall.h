@@ -7,7 +7,8 @@
 #define SYS_pipe    SYS_pipe2
 #define SYS_read    63
 #define SYS_kill    6
-#define SYS_exec    7
+#define SYS_exec    221
+#define SYS_execve  SYS_exec
 #define SYS_fstat   80
 #define SYS_chdir   49
 #define SYS_getdir  17
@@ -28,18 +29,17 @@
 #define SYS_unlinkat 35
 #define SYS_link    19
 #define SYS_mkdir   20
+#define SYS_mkdirat  34
 #define SYS_close   57
 
 // File operations
 #define SYS_openat   56
 #define SYS_linkat   37
-#define SYS_mkdirat  34
 // #define SYS_mount    40
 // #define SYS_umount2  39
 // mount not supported
 
 // Process management
-#define SYS_execve   221
 #define SYS_wait4    260
 
 // Memory management

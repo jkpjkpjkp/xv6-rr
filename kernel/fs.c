@@ -648,7 +648,7 @@ skipelem(char *path, char *name)
 /// @param path abs or relative path. if abs, `fd` is ignored. if path==0, return file[fd]->ip
 /// @return retrieved inode
 struct inode*
-namefd(int fd, int nameiparent, char *path)
+namefd(int fd, int nameiparent, char *path, char *name)
 {
   struct inode *ip, *next;
   struct file *f;

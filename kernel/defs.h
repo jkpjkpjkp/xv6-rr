@@ -48,7 +48,7 @@ void            iunlock(struct inode*);
 void            iunlockput(struct inode*);
 void            iupdate(struct inode*);
 int             namecmp(const char*, const char*);
-struct inode*   namefd(int fd, int nameiparent, char *path);
+struct inode*   namefd(int fd, int nameiparent, char *path, char *name);
 struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, int, uint64, uint, uint);
