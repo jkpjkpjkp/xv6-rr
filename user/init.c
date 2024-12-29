@@ -1,5 +1,3 @@
-// init: The initial user-level program
-
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "kernel/spinlock.h"
@@ -9,46 +7,72 @@
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-char *argv[] = { "sh", 0 };
+char *tests[] = {
+  "brk",
+  "chdir",
+  "clone",
+  "close",
+  "dup2",
+  "dup",
+  "execve",
+  "exit",
+  "fork",
+  "fstat",
+  "getcwd",
+  "getdents",
+  "getpid",
+  "getppid",
+  "gettimeofday",
+  "mkdir_",
+  "mmap",
+  "mount",
+  "munmap",
+  "openat",
+  "open",
+  "pipe",
+  "read",
+  "times",
+  "umount",
+  "uname",
+  "unlink",
+  "wait",
+  "waitpid",
+  "write",
+  "yield",
+  0
+};
 
 int
-main(void)
+main(int argc, char *argv[])
 {
   int pid, wpid;
+  char path[64];
+  char *args[2];  // Array of pointers for exec arguments
 
-  if(open("console", O_RDWR) < 0){
-    mknod("console", CONSOLE, 0);
-    open("console", O_RDWR);
-  }
-  dup(0);  // stdout
-  dup(0);  // stderr
+  for(char **test = tests; *test; test++) {
+    printf("Testing %s:\n", *test);
+    
+    // Use safer string copy
+    memmove(path, "/sdcard/", 8);
+    memmove(path + 8, *test, strlen(*test) + 1);
 
-  for(;;){
-    printf("init: starting sh\n");
     pid = fork();
-    if(pid < 0){
-      printf("init: fork failed\n");
+    if(pid < 0) {
+      printf("runall: fork failed\n");
       exit(1);
     }
-    if(pid == 0){
-      exec("sh", argv);
-      printf("init: exec sh failed\n");
+    if(pid == 0) {
+      args[0] = path;    // First argument is program name
+      args[1] = 0;       // Null terminate the array
+      exec(path, args);  // Pass array of pointers
+      printf("runall: exec %s failed\n", path);
       exit(1);
     }
 
-    for(;;){
-      // this call to wait() returns if the shell exits,
-      // or if a parentless process exits.
-      wpid = wait((int *) 0);
-      if(wpid == pid){
-        // the shell exited; restart it.
-        break;
-      } else if(wpid < 0){
-        printf("init: wait returned an error\n");
-        exit(1);
-      } else {
-        // it was a parentless process; do nothing.
-      }
+    // Parent waits
+    while((wpid = wait(0)) >= 0 && wpid != pid) {
+      // Wait for the specific child
     }
   }
+  exit(0);
 }

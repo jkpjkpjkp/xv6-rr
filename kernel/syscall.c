@@ -101,6 +101,21 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
+extern uint64 sys_openat(void);
+extern uint64 sys_linkat(void);
+extern uint64 sys_mkdirat(void);
+extern uint64 sys_mount(void);
+extern uint64 sys_umount2(void);
+extern uint64 sys_execve(void);
+extern uint64 sys_wait4(void);
+extern uint64 sys_mmap(void);
+extern uint64 sys_munmap(void);
+extern uint64 sys_times(void);
+extern uint64 sys_uname(void);
+extern uint64 sys_sched_yield(void);
+extern uint64 sys_gettimeofday(void);
+extern uint64 sys_nanosleep(void);
+extern uint64 sys_shutdown(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,6 +141,21 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_openat]  sys_openat,
+[SYS_linkat]  sys_linkat,
+[SYS_mkdirat] sys_mkdirat,
+// [SYS_mount]   sys_mount,
+// [SYS_umount2] sys_umount2,
+[SYS_execve]  sys_execve,
+[SYS_wait4]   sys_wait4,
+[SYS_mmap]    sys_mmap,
+[SYS_munmap]  sys_munmap,
+[SYS_times]   sys_times,
+[SYS_uname]   sys_uname,
+[SYS_sched_yield] sys_sched_yield,
+[SYS_gettimeofday] sys_gettimeofday,
+[SYS_nanosleep]    sys_nanosleep,
+[SYS_shutdown]     sys_shutdown,
 };
 
 void

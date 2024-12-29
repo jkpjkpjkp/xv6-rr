@@ -2,6 +2,7 @@
     "files.associations": {
         "elf.h": "c",
         "defs.h": "c",
-        "inode.h": "c"
+        "inode.h": "c",
+        "fcntl.h": "c"
     }
 }

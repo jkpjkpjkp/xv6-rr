@@ -11,6 +11,7 @@
 #define SYS_fstat   80
 #define SYS_chdir   49
 #define SYS_getdir  17
+#define SYS_getcwd  SYS_getdir
 #define SYS_getdents64  61
 #define SYS_dup     23
 #define SYS_dup3    24
@@ -28,3 +29,29 @@
 #define SYS_link    19
 #define SYS_mkdir   20
 #define SYS_close   57
+
+// File operations
+#define SYS_openat   56
+#define SYS_linkat   37
+#define SYS_mkdirat  34
+// #define SYS_mount    40
+// #define SYS_umount2  39
+// mount not supported
+
+// Process management
+#define SYS_execve   221
+#define SYS_wait4    260
+
+// Memory management
+#define SYS_mmap     222
+#define SYS_munmap   215
+
+// Other system calls
+#define SYS_times    153
+#define SYS_uname    160
+#define SYS_sched_yield 124
+#define SYS_gettimeofday 169
+#define SYS_nanosleep 101
+
+
+#define SYS_shutdown 77

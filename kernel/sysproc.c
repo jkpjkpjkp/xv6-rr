@@ -6,6 +6,14 @@
 #include "spinlock.h"
 #include "proc.h"
 
+void
+sys_shutdown(void)
+{ // TODO not right. fine sbi shutdown. 
+  // Shutdown the system by writing to the TEST register
+  // This is specific to QEMU's RISC-V virt machine
+  *(uint32*)0x100000 = 0x5555; 
+}
+
 uint64
 sys_exit(void)
 {
@@ -108,4 +116,47 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+uint64
+sys_sched_yield(void)
+{
+  yield();
+  return 0;
+}
+
+uint64
+sys_nanosleep(void)
+{
+  return -1;
+}
+
+uint64
+sys_wait4(void)
+{
+  return -1;  // Dummy implementation
+}
+
+uint64
+sys_execve(void)
+{
+  return -1;  // Dummy implementation
+}
+
+uint64
+sys_times(void)
+{
+  return -1;  // Dummy implementation
+}
+
+uint64
+sys_gettimeofday(void)
+{
+  return -1;  // Dummy implementation
+}
+
+uint64
+sys_uname(void)
+{
+  return -1;  // Dummy implementation
 }
