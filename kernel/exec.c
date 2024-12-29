@@ -31,10 +31,10 @@ exec(char *path, char **argv)
   pagetable_t pagetable = 0, oldpagetable;
   struct proc *p = myproc();
 
-  begin_op(ROOTDEV);
+  begin_op();
 
   if((ip = namei(path)) == 0){
-    end_op(ROOTDEV);
+    end_op();
     return -1;
   }
   ilock(ip);
@@ -69,7 +69,7 @@ exec(char *path, char **argv)
       goto bad;
   }
   iunlockput(ip);
-  end_op(ROOTDEV);
+  end_op();
   ip = 0;
 
   p = myproc();

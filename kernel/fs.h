@@ -58,4 +58,3 @@ struct dirent {
   char name[DIRSIZ];
 };
 
-#define MAX_DNO_PLUS_1 3 // max # of discs + 1

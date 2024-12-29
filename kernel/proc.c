@@ -360,9 +360,9 @@ exit(int status)
     }
   }
 
-  begin_op(ROOTDEV);
+  begin_op();
   iput(p->cwd);
-  end_op(ROOTDEV);
+  end_op();
   p->cwd = 0;
 
   acquire(&wait_lock);
@@ -533,7 +533,6 @@ forkret(void)
     // regular process (e.g., because it calls sleep), and thus cannot
     // be run from main().
     fsinit(ROOTDEV);
-    fsinit(ROOTDEV+1);
 
     first = 0;
     // ensure other cores see first=0.
