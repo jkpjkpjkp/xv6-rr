@@ -39,7 +39,8 @@ main()
     iinit();         // inode table
     fileinit();      // file table
     printf("DEBUG: Starting virtio_disk_init\n");
-    virtio_disk_init(); // emulated hard disk
+    virtio_disk_init(0); // emulated hard disk
+    virtio_disk_init(1); // emulated hard disk
     userinit();      // first user process
     __sync_synchronize();
     started = 1;
@@ -52,11 +53,6 @@ main()
     kvminithart();    // turn on paging
     trapinithart();   // install kernel trap vector
     plicinithart();   // ask PLIC for device interrupts
-
-    if(cpuid() == 1){
-      init_fat_copy();
-      userinit2();
-    }
   }
 
   scheduler();        
