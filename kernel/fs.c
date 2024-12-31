@@ -291,13 +291,23 @@ idup(struct inode *ip)
 void
 ilock(struct inode *ip)
 {
-  printf("[ilock] starting\n");
+  if(ip == 0)
+    panic("ilock: null ip");
+
+  printf("[ilock] starting ip=%p ref=%d dev=%d inum=%d\n", 
+         ip, ip->ref, ip->dev, ip->inum);
+  
   struct buf *bp;
   struct dinode *dip;
 
-  if(ip == 0 || ip->ref < 1)
-    panic("ilock");
+  if(ip->ref < 1)
+    panic("ilock: no refs");
+
   printf("[ilock] mid\n");
+
+  // Add check for lock initialization
+  if(ip->lock.locked == 0xDEADBEEF)
+    panic("ilock: lock not initialized");
 
   acquiresleep(&ip->lock);
 

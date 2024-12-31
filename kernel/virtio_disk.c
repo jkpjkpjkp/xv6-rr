@@ -354,7 +354,8 @@ DRESULT
 disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
   if(pdrv != 1 || BSIZE != 1024)
     panic("[disk_write]");
-  struct buf b; // TODO: check if sleeplock needs init. 
+  struct buf b;
+  initsleeplock(&b.lock, "[disk_write] buf b");
   b.valid = 0;
   b.disk = 0;
   b.dev = 1;
