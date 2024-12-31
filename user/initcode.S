@@ -8,10 +8,6 @@
 .globl start
 start:
 
-# sys_initfatcopy()
-        li a7, 99 # SYS_initfatcopy
-        ecall
-
 # exec(init, argv)
         la a0, init
         la a1, argv

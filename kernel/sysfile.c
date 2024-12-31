@@ -908,13 +908,6 @@ sys_munmap(void)
   return -1;  // Dummy implementation
 }
 
-uint64
-sys_initfatcopy(void)
-{
-  init_fat_copy();
-  return 0;
-}
-
 
 uint64
 copy_file_from_fat32(char *filename)

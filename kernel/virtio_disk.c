@@ -351,7 +351,7 @@ disk_initialize(BYTE pdrv) {
 }
 
 DRESULT 
-disk_write(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
+disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
   if(pdrv != 1 || BSIZE != 1024)
     panic("[disk_write]");
   struct buf b; // TODO: check if sleeplock needs init. 
@@ -375,7 +375,6 @@ disk_write(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
     b.blockno ++;
   }
   if(count){
-    assert(count == 1);
     virtio_disk_rw(&b, 0, 1);
     memmove(b.data, buff, 512);
     virtio_disk_rw(&b, 1, 1);
@@ -384,7 +383,7 @@ disk_write(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
 }
 
 DRESULT 
-disk_read(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
+disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
   if(pdrv != 1 || BSIZE != 1024)
     panic("[disk_read]");
   struct buf b;
@@ -407,7 +406,6 @@ disk_read(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
     b.blockno ++;
   }
   if(count){
-    assert(count == 1);
     virtio_disk_rw(&b, 0, 1);
     memmove(buff, b.data, 512);
   }
@@ -416,28 +414,25 @@ disk_read(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
 
 DRESULT 
 disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
-  if(pdrv != 1)
-    panic("[disk_ioctl]");
-
-    switch (cmd) {
-        case CTRL_SYNC:
-            // Ensure all write operations are completed
-            return RES_OK;
-        case GET_SECTOR_COUNT:
-            // Return the total number of sectors
-            *(DWORD *)buff = TOTAL_SECTORS;
-            return RES_OK;
-        case GET_SECTOR_SIZE:
-            // Return the sector size
-            *(WORD *)buff = 512;
-            return RES_OK;
-        case GET_BLOCK_SIZE:
-            // Return the block size
-            *(DWORD *)buff = 1; // Assuming no erase block
-            return RES_OK;
-        default:
-            return RES_PARERR;
-    }
+  switch (cmd) {
+    case CTRL_SYNC:
+      // Ensure all write operations are completed
+      return RES_OK;
+    case GET_SECTOR_COUNT:
+      // Return the total number of sectors
+      *(DWORD *)buff = TOTAL_SECTORS;
+      return RES_OK;
+    case GET_SECTOR_SIZE:
+      // Return the sector size
+      *(WORD *)buff = 512;
+      return RES_OK;
+    case GET_BLOCK_SIZE:
+      // Return the block size
+      *(DWORD *)buff = 1; // Assuming no erase block
+      return RES_OK;
+    default:
+        return RES_PARERR;
+  }
 }
 
 DWORD get_fattime(void) {

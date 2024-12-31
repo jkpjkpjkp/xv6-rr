@@ -8,8 +8,6 @@
 
 volatile static int started = 0;
 
-void init_fat_copy(void);
-
 // start() jumps here in supervisor mode on all CPUs.
 void
 main()

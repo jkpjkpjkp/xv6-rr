@@ -55,5 +55,3 @@
 
 
 #define SYS_shutdown 77
-
-#define SYS_initfatcopy 99
