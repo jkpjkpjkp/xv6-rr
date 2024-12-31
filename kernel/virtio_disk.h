@@ -18,7 +18,7 @@ typedef DWORD LBA_t;
 #define GET_SECTOR_COUNT 1
 #define GET_SECTOR_SIZE 2
 #define GET_BLOCK_SIZE 3
-#define TOTAL_SECTORS 1024  // Example value, adjust as needed
+#define TOTAL_SECTORS 2048 * 8 // 8MB
 
 DSTATUS disk_status(BYTE pdrv);
 DSTATUS disk_initialize(BYTE pdrv);

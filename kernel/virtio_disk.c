@@ -16,6 +16,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "virtio.h"
+#include "stat.h"
 
 // the address of virtio mmio register r.
 #define R(r, dev) ((volatile uint32 *)(VIRTIO0 + (r) + (uint64)dev * 0x1000))
@@ -328,54 +329,95 @@ virtio_disk_intr(int dev)
 }
 
 
-DSTATUS disk_status(BYTE pdrv) {
-    // Check if the disk is initialized and return status
-    if (pdrv != 0) return STA_NOINIT; // Only support one drive
-    return 0; // Disk is initialized
+DSTATUS 
+disk_status(BYTE pdrv) {
+  if(pdrv != 1)
+    panic("[disk_status]");
+  return 0;
 }
 
-DSTATUS disk_initialize(BYTE pdrv) {
-    if (pdrv != 0) return STA_NOINIT; // Only support one drive
-    virtio_disk_init(1); // Initialize the virtio disk
-    return 0; // Initialization successful
+DSTATUS 
+disk_initialize(BYTE pdrv) {
+  if(pdrv != 1)
+    panic("[disk_initialize]");
+  virtio_disk_init(1);
+  begin_op();
+  if(create("/sdcard", T_DIR, 0, 0, 0) == 0){
+    end_op();
+    panic("[disk_initialize]");
+  }
+  end_op();
+  return 0;
 }
 
-DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
-    if (pdrv != 0) return RES_PARERR; // Only support one drive
-
-    struct buf b;
-    printf("[disk_read] memmove\n");
+DRESULT 
+disk_write(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
+  if(pdrv != 1 || BSIZE != 1024)
+    panic("[disk_write]");
+  struct buf b; // TODO: check if sleeplock needs init. 
+  b.valid = 0;
+  b.disk = 0;
+  b.dev = 1;
+  b.blockno = sector / 2;
+  if(sector&1){
+    virtio_disk_rw(&b, 0, 1);
+    memmove(b.data+512, buff, 512);
+    virtio_disk_rw(&b, 1, 1);
+    sector ++;
+    count --;
+    b.blockno ++;
+  }
+  while(count >= 2){
     memmove(b.data, buff, BSIZE);
-    b.blockno = sector;
-    b.disk = 0;
-
-    printf("[disk_read] virtio_disk_rw %u\n", count);
-    for (UINT i = 0; i < count; i++) {
-        virtio_disk_rw(&b, 0, 1); // Read operation
-        b.blockno++;
-        buff += BSIZE;
-    }
-    return RES_OK;
+    virtio_disk_rw(&b, 1, 1);
+    sector += 2;
+    count -= 2;
+    b.blockno ++;
+  }
+  if(count){
+    assert(count == 1);
+    virtio_disk_rw(&b, 0, 1);
+    memmove(b.data, buff, 512);
+    virtio_disk_rw(&b, 1, 1);
+  }
+  return RES_OK;
 }
 
-DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
-    if (pdrv != 0) return RES_PARERR; // Only support one drive
-
-    struct buf b;
-    memmove(b.data, buff, BSIZE);
-    b.blockno = sector;
-    b.disk = 0;
-
-    for (UINT i = 0; i < count; i++) {
-        virtio_disk_rw(&b, 1, 1); // Write operation
-        b.blockno++;
-        buff += BSIZE;
-    }
-    return RES_OK;
+DRESULT 
+disk_read(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
+  if(pdrv != 1 || BSIZE != 1024)
+    panic("[disk_read]");
+  struct buf b;
+  b.valid = 0;
+  b.disk = 0;
+  b.dev = 1;
+  b.blockno = sector / 2;
+  if(sector & 1){
+    virtio_disk_rw(&b, 0, 1);
+    memmove(buff, b.data+512, 512);
+    sector ++;
+    count --;
+    b.blockno ++;
+  }
+  while(count >= 2){
+    virtio_disk_rw(&b, 0, 1);
+    memmove(buff, b.data+512, BSIZE);
+    sector += 2;
+    count -= 2;
+    b.blockno ++;
+  }
+  if(count){
+    assert(count == 1);
+    virtio_disk_rw(&b, 0, 1);
+    memmove(buff, b.data, 512);
+  }
+  return RES_OK;
 }
 
-DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
-    if (pdrv != 0) return RES_PARERR; // Only support one drive
+DRESULT 
+disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
+  if(pdrv != 1)
+    panic("[disk_ioctl]");
 
     switch (cmd) {
         case CTRL_SYNC:
@@ -387,7 +429,7 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
             return RES_OK;
         case GET_SECTOR_SIZE:
             // Return the sector size
-            *(WORD *)buff = BSIZE;
+            *(WORD *)buff = 512;
             return RES_OK;
         case GET_BLOCK_SIZE:
             // Return the block size
@@ -400,5 +442,5 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
 
 DWORD get_fattime(void) {
     // Return a fixed time for simplicity
-    return ((DWORD)(2023 - 1980) << 25) | ((DWORD)10 << 21) | ((DWORD)1 << 16);
+    return ((DWORD)(2024 - 1980) << 25) | ((DWORD)12 << 21) | ((DWORD)31 << 16);
 }

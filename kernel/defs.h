@@ -150,6 +150,7 @@ void            syscall();
 
 // sysfile.c
 struct inode*   create(char *path, short type, short major, short minor, int fd);
+uint64          copy_all_files();
 
 // trap.c
 extern uint     ticks;
