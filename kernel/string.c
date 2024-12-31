@@ -1,4 +1,5 @@
 #include "types.h"
+#include "printf.h"
 
 void*
 memset(void *dst, int c, uint n)
@@ -30,6 +31,7 @@ memcmp(const void *v1, const void *v2, uint n)
 void*
 memmove(void *dst, const void *src, uint n)
 {
+  printf("[memmove] %lld %lld %u\n", (long long int)dst, (long long int)src, n);
   const char *s;
   char *d;
 
@@ -47,6 +49,7 @@ memmove(void *dst, const void *src, uint n)
     while(n-- > 0)
       *d++ = *s++;
 
+  printf("[memmove] done\n");
   return dst;
 }
 

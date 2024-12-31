@@ -61,7 +61,7 @@ main()
 // Helper function to copy FAT files to xv6 fs
 static void
 copy_fat_to_xv6(const char *fat_path, const char *xv6_path) {
-  FATFS fs;
+  printf("[copy_fat_to_xv6] starting\n");
   DIR dir;
   FILINFO fno;
   FIL fsrc;
@@ -72,15 +72,13 @@ copy_fat_to_xv6(const char *fat_path, const char *xv6_path) {
   char src_path[MAXPATH];
   char dst_path[MAXPATH];
 
-  // Mount FAT filesystem
-  if (f_mount(&fs, "", 1) != FR_OK) {
-    panic("fatfs: mount failed");
-  }
+  printf("[copy_fat_to_xv6] open dir\n");
 
   // Open source directory
   if (f_opendir(&dir, fat_path) != FR_OK) {
     panic("fatfs: cannot open source dir");
   }
+  printf("[copy_fat_to_xv6] start copying\n");
 
   // Read directory entries
   while (f_readdir(&dir, &fno) == FR_OK && fno.fname[0] != 0) {

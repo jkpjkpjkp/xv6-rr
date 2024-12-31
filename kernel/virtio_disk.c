@@ -344,10 +344,12 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
     if (pdrv != 0) return RES_PARERR; // Only support one drive
 
     struct buf b;
+    printf("[disk_read] memmove\n");
     memmove(b.data, buff, BSIZE);
     b.blockno = sector;
     b.disk = 0;
 
+    printf("[disk_read] virtio_disk_rw %u\n", count);
     for (UINT i = 0; i < count; i++) {
         virtio_disk_rw(&b, 0, 1); // Read operation
         b.blockno++;

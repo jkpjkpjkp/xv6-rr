@@ -22,6 +22,8 @@
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
 
+#include "kernel/printf.h"
+
 
 /*--------------------------------------------------------------------------
 
@@ -1085,16 +1087,20 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 
 	if (sect != fs->winsect) {	/* Window offset changed? */
+	printf("[move_window] A\n");
 #if !FF_FS_READONLY
 		res = sync_window(fs);		/* Flush the window */
 #endif
+	printf("[move_window] B\n");
 		if (res == FR_OK) {			/* Fill sector window with new data */
+	printf("[move_window] disk_read\n");
 			if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
 				res = FR_DISK_ERR;
 			}
 			fs->winsect = sect;
 		}
+	printf("[move_window] D\n");
 	}
 	return res;
 }
@@ -3313,12 +3319,15 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 
 
 	fs->wflag = 0; fs->winsect = (LBA_t)0 - 1;		/* Invaidate window */
+	printf("[check_fs] move_window\n");
 	if (move_window(fs, sect) != FR_OK) return 4;	/* Load the boot sector */
+	printf("[check_fs] ld_word\n");
 	sign = ld_word(fs->win + BS_55AA);
 #if FF_FS_EXFAT
 	if (sign == 0xAA55 && !memcmp(fs->win + BS_JmpBoot, "\xEB\x76\x90" "EXFAT   ", 11)) return 1;	/* It is an exFAT VBR */
 #endif
 	b = fs->win[BS_JmpBoot];
+	printf("[check_fs] mid\n");
 	if (b == 0xEB || b == 0xE9 || b == 0xE8) {	/* Valid JumpBoot code? (short jump, near jump or near call) */
 		if (sign == 0xAA55 && !memcmp(fs->win + BS_FilSysType32, "FAT32   ", 8)) {
 			return 0;	/* It is an FAT32 VBR */
@@ -3348,11 +3357,14 @@ static UINT find_volume (	/* Returns BS status found in the hosting drive */
 	UINT part		/* Partition to fined = 0:find as SFD and partitions, >0:forced partition number */
 )
 {
+	printf("[find_volume] start\n");
 	UINT fmt, i;
 	DWORD mbr_pt[4];
 
 
+	printf("[find_volume] check_fs\n");
 	fmt = check_fs(fs, 0);				/* Load sector 0 and check if it is an FAT VBR as SFD format */
+	printf("[find_volume] check_fs done\n");
 	if (fmt != 2 && (fmt >= 3 || part == 0)) return fmt;	/* Returns if it is an FAT VBR as auto scan, not a BS or disk error */
 
 	/* Sector 0 is not an FAT VBR or forced partition number wants a partition */
@@ -3403,6 +3415,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	BYTE mode					/* Desiered access mode to check write protection */
 )
 {
+	printf("[mount_volume] start\n");
 	int vol;
 	FATFS *fs;
 	DSTATUS stat;
@@ -3414,11 +3427,15 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 
 	/* Get logical drive number */
 	*rfs = 0;
+	printf("[mount_volume] get_ldnumber\n");
 	vol = get_ldnumber(path);
+	printf("[mount_volume] get_ldnumber %d\n", vol);
 	if (vol < 0) return FR_INVALID_DRIVE;
 
 	/* Check if the filesystem object is valid or not */
 	fs = FatFs[vol];					/* Get pointer to the filesystem object */
+	
+	printf("[mount_volume] get_fs %lld\n", (long long int)fs);
 	if (!fs) return FR_NOT_ENABLED;		/* Is the filesystem object available? */
 #if FF_FS_REENTRANT
 	if (!lock_volume(fs, 1)) return FR_TIMEOUT;	/* Lock the volume, and system if needed */
@@ -3439,8 +3456,12 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	/* The filesystem object is not valid. */
 	/* Following code attempts to mount the volume. (find an FAT volume, analyze the BPB and initialize the filesystem object) */
 
+
+	printf("[mount_volume] disk_initialize\n");
 	fs->fs_type = 0;					/* Invalidate the filesystem object */
 	stat = disk_initialize(fs->pdrv);	/* Initialize the volume hosting physical drive */
+	
+	printf("[mount_volume] disk_initialize done\n");
 	if (stat & STA_NOINIT) { 			/* Check if the initialization succeeded */
 		return FR_NOT_READY;			/* Failed to initialize due to no medium or hard error */
 	}
@@ -3452,8 +3473,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	if (SS(fs) > FF_MAX_SS || SS(fs) < FF_MIN_SS || (SS(fs) & (SS(fs) - 1))) return FR_DISK_ERR;
 #endif
 
+	printf("[mount_volume] find_volume\n");
 	/* Find an FAT volume on the hosting drive */
 	fmt = find_volume(fs, LD2PT(vol));
+	printf("[mount_volume] find_volume done\n");
 	if (fmt == 4) return FR_DISK_ERR;		/* An error occurred in the disk I/O layer */
 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
 	bsect = fs->winsect;					/* Volume offset in the hosting physical drive */
@@ -3525,6 +3548,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	} else
 #endif	/* FF_FS_EXFAT */
 	{
+	printf("[mount_volume] FF_FS_FAT\n");
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 
 		fasize = ld_word(fs->win + BPB_FATSz16);		/* Number of sectors per FAT */
@@ -3577,6 +3601,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_FATSz must not be less than the size needed) */
 
 #if !FF_FS_READONLY
+	printf("[mount_volume] !FF_FS_READONLY\n");
 		/* Get FSInfo if available */
 		fs->last_clst = fs->free_clst = 0xFFFFFFFF;		/* Invalidate cluster allocation information */
 		fs->fsi_flag = 0x80;	/* Disable FSInfo by default */
@@ -3615,6 +3640,8 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	clear_share(fs);
 #endif
 	return FR_OK;
+	
+	printf("[mount_volume] done\n");
 }
 
 
@@ -3674,17 +3701,20 @@ FRESULT f_mount (
 	BYTE opt			/* Mount option: 0=Do not mount (delayed mount), 1=Mount immediately */
 )
 {
+	printf("[f_mount] starting\n");
 	FATFS *cfs;
 	int vol;
 	FRESULT res;
 	const TCHAR *rp = path;
 
 
+	printf("[f_mount] get_ldnumber\n");
 	/* Get volume ID (logical drive number) */
 	vol = get_ldnumber(&rp);
 	if (vol < 0) return FR_INVALID_DRIVE;
 	cfs = FatFs[vol];			/* Pointer to the filesystem object of the volume */
 
+	printf("[f_mount] mid\n");
 	if (cfs) {					/* Unregister current filesystem object if registered */
 		FatFs[vol] = 0;
 #if FF_FS_LOCK
@@ -3717,8 +3747,11 @@ FRESULT f_mount (
 
 	if (opt == 0) return FR_OK;	/* Do not mount now, it will be mounted in subsequent file functions */
 
+	printf("[f_mount] mount_volume\n");
 	res = mount_volume(&path, &fs, 0);	/* Force mounted the volume */
+	printf("[f_mount] LEAVE_FF\n");
 	LEAVE_FF(fs, res);
+	printf("[f_mount] done\n");
 }
 
 

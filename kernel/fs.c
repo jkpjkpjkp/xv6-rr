@@ -709,7 +709,7 @@ namex(char *path, int nameiparent, char *name)
     ip = iget(ROOTDEV, ROOTINO);
   else
     ip = idup(myproc()->cwd);
-  printf("%d %d\n", ip->dev, ip->inum);
+  // printf("[namex] %d %d\n", ip->dev, ip->inum);
 
   while((path = skipelem(path, name)) != 0){
     printf("[namex] skipelem\n");
