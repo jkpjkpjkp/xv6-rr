@@ -38,10 +38,11 @@ main()
     fileinit();      // file table
     printf("DEBUG: Starting virtio_disk_init\n");
     virtio_disk_init(0); // emulated hard disk
-    userinit();      // first user process
+    userinit(0);      // first user process
     __sync_synchronize();
     started = 1;
     copy_all_files();
+    userinit(1);
   } else {
     while(started == 0)
       ;

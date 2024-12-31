@@ -219,6 +219,10 @@ proc_freepagetable(pagetable_t pagetable, uint64 sz)
   uvmfree(pagetable, sz);
 }
 
+unsigned char dummy[] = {
+  0x93, 0x08, 0xd0, 0x05, 0x73, 0x00, 0x00, 0x00, 0xef, 0xf0, 0x9f, 0xff
+};
+
 // a user program that calls exit()
 // assembled from ../user/initcode.S
 unsigned char initcode[] = {
@@ -232,16 +236,23 @@ unsigned char initcode[] = {
 
 // Set up first user process.
 void
-userinit(void)
+userinit(int t)
 {
   struct proc *p;
 
   p = allocproc();
-  initproc = p;
+  if(t == 0)
+    initproc = p;
   
   // allocate one user page and copy initcode's instructions
   // and data into it.
-  uvmfirst(p->pagetable, initcode, sizeof(initcode));
+  if(t == 0) {
+    uvmfirst(p->pagetable, dummy, sizeof(initcode));
+  } else if(t == 1){
+    uvmfirst(p->pagetable, initcode, sizeof(initcode));
+  } else {
+    panic("[userinit]");
+  }
   p->sz = PGSIZE;
 
   // prepare for the very first "return" from kernel to user.
