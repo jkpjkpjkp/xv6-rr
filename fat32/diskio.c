@@ -9,49 +9,53 @@
 
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
-#include "kernel/virtio_disk.h"
+#include "user/user.h"
+#include "kernel/printf.h"
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
-#define DEV_MMC		2	/* Example: Map MMC/SD card to physical drive 2 */
-#define DEV_USB		1	/* Example: Map USB MSD to physical drive 1 */
+#define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
+#define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 	
 
 // /*-----------------------------------------------------------------------*/
 // /* Get Drive Status                                                      */
 // /*-----------------------------------------------------------------------*/
 
-// DSTATUS disk_status (
-// 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
-// )
-// {
-// 	DSTATUS stat;
-// 	int result;
+DSTATUS disk_status (
+	BYTE pdrv		/* Physical drive nmuber to identify the drive */
+)
+{
+	DSTATUS stat;
+	int result;
 
-// 	switch (pdrv) {
-// 	case DEV_RAM :
-// 		result = RAM_disk_status();
+    assert(pdrv == 1);
+    
 
-// 		// translate the reslut code here
+	switch (pdrv) {
+	case DEV_RAM :
+		result = RAM_disk_status();
 
-// 		return stat;
+		// translate the reslut code here
 
-// 	case DEV_MMC :
-// 		result = MMC_disk_status();
+		return stat;
 
-// 		// translate the reslut code here
+	case DEV_MMC :
+		result = MMC_disk_status();
 
-// 		return stat;
+		// translate the reslut code here
 
-// 	case DEV_USB :
-// 		result = USB_disk_status();
+		return stat;
 
-// 		// translate the reslut code here
+	case DEV_USB :
+		result = USB_disk_status();
 
-// 		return stat;
-// 	}
-// 	return STA_NOINIT;
-// }
+		// translate the reslut code here
+
+		return stat;
+	}
+	return STA_NOINIT;
+}
 
 
 

@@ -176,3 +176,10 @@ printfinit(void)
   initlock(&pr.lock, "pr");
   pr.locking = 1;
 }
+
+void
+assert(int flag)
+{
+  if(!flag)
+    panic("[assert]");
+}

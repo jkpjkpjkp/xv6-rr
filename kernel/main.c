@@ -38,6 +38,7 @@ main()
     fileinit();      // file table
     printf("DEBUG: Starting virtio_disk_init\n");
     virtio_disk_init(0); // emulated hard disk
+    virtio_disk_init(1); // fat32 disk
     userinit(0);      // first user process
     __sync_synchronize();
     started = 1;

@@ -3,6 +3,8 @@
         "elf.h": "c",
         "defs.h": "c",
         "inode.h": "c",
-        "fcntl.h": "c"
+        "fcntl.h": "c",
+        "printf.h": "c",
+        "ffcompat.h": "c"
     }
 }

@@ -15,7 +15,7 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
-#include "fat32/ff.h"
+#include "buf.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -908,45 +908,33 @@ sys_munmap(void)
   return -1;  // Dummy implementation
 }
 
-
 uint64
-copy_file_from_fat32(char *filename)
+sys_virtio_disk_rw(void)
 {
-  FIL fp;
-  char path[MAXPATH], buf[BSIZE];
-  FSIZE_t sz;
-  UINT br;
-  struct inode *ip;
-  strncpy(path, "/sdcard/", 10);
-  safestrcpy(path+8, filename, MAXPATH - 10);
-  ip = create(path, T_FILE, 0, 0, 0);
-  f_open(&fp, path+7, FA_READ);
-  sz = f_size(&fp);
-  for(int i = 0; i < sz; i += BSIZE){
-    f_read (
-      &fp,     /* [IN] File object */
-      buf,  /* [OUT] Buffer to store read data */
-      BSIZE,    /* [IN] Number of bytes to read */
-      &br     /* [OUT] Number of bytes read */
-    );
-    writei(ip, 0, (uint64)buf, i, br);
-  }
-  return 0;
-}
+  uint64 buf_addr;
+  int write, dev, blockno;
+  struct buf b;
+  
+  argaddr(0, &buf_addr);
+  argint(1, &write);
+  argint(2, &dev);
+  argint(3, &blockno);
 
-uint64
-copy_all_files()
-{
-  FATFS fs;
-  fs.pdrv = 1;
-  f_mount(&fs, "1:", 1);
-  DIR dp;
-  FILINFO fno;
-  f_opendir(&dp, "/");
-  while(f_readdir(&dp, &fno)){
-    if(fno.fattrib & AM_DIR)
-      continue;
-    copy_file_from_fat32(fno.fname);
+  initsleeplock(&b.lock, "virtio_disk_rw buf");
+  b.valid = 0;
+  b.disk = 0;
+  b.dev = dev;
+  b.blockno = blockno;
+
+  if(copyin(myproc()->pagetable, (char*)b.data, buf_addr, BSIZE) < 0)
+    return -1;
+
+  virtio_disk_rw(&b, write, dev);
+
+  if(!write) {
+    if(copyout(myproc()->pagetable, buf_addr, (char*)b.data, BSIZE) < 0)
+      return -1;
   }
+
   return 0;
 }

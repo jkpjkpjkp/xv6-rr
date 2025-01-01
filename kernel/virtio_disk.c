@@ -61,7 +61,7 @@ static struct disk {
 } disk[2];
 
 void
-virtio_disk_init(int dev)
+virtio_disk_init(int dev) // 0 for original disk, 1 for fatfs
 {
   uint32 status = 0;
 
@@ -326,117 +326,4 @@ virtio_disk_intr(int dev)
   }
 
   release(&disk[dev].vdisk_lock);
-}
-
-
-DSTATUS 
-disk_status(BYTE pdrv) {
-  if(pdrv != 1)
-    panic("[disk_status]");
-  return 0;
-}
-
-DSTATUS 
-disk_initialize(BYTE pdrv) {
-  if(pdrv != 1)
-    panic("[disk_initialize]");
-  virtio_disk_init(1);
-  begin_op();
-  if(create("/sdcard", T_DIR, 0, 0, 0) == 0){
-    end_op();
-    panic("[disk_initialize]");
-  }
-  end_op();
-  return 0;
-}
-
-DRESULT 
-disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
-  if(pdrv != 1 || BSIZE != 1024)
-    panic("[disk_write]");
-  struct buf b;
-  initsleeplock(&b.lock, "[disk_write] buf b");
-  b.valid = 0;
-  b.disk = 0;
-  b.dev = 1;
-  b.blockno = sector / 2;
-  if(sector&1){
-    virtio_disk_rw(&b, 0, 1);
-    memmove(b.data+512, buff, 512);
-    virtio_disk_rw(&b, 1, 1);
-    sector ++;
-    count --;
-    b.blockno ++;
-  }
-  while(count >= 2){
-    memmove(b.data, buff, BSIZE);
-    virtio_disk_rw(&b, 1, 1);
-    sector += 2;
-    count -= 2;
-    b.blockno ++;
-  }
-  if(count){
-    virtio_disk_rw(&b, 0, 1);
-    memmove(b.data, buff, 512);
-    virtio_disk_rw(&b, 1, 1);
-  }
-  return RES_OK;
-}
-
-DRESULT 
-disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
-  if(pdrv != 1 || BSIZE != 1024)
-    panic("[disk_read]");
-  struct buf b;
-  b.valid = 0;
-  b.disk = 0;
-  b.dev = 1;
-  b.blockno = sector / 2;
-  if(sector & 1){
-    virtio_disk_rw(&b, 0, 1);
-    memmove(buff, b.data+512, 512);
-    sector ++;
-    count --;
-    b.blockno ++;
-  }
-  while(count >= 2){
-    virtio_disk_rw(&b, 0, 1);
-    memmove(buff, b.data+512, BSIZE);
-    sector += 2;
-    count -= 2;
-    b.blockno ++;
-  }
-  if(count){
-    virtio_disk_rw(&b, 0, 1);
-    memmove(buff, b.data, 512);
-  }
-  return RES_OK;
-}
-
-DRESULT 
-disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
-  switch (cmd) {
-    case CTRL_SYNC:
-      // Ensure all write operations are completed
-      return RES_OK;
-    case GET_SECTOR_COUNT:
-      // Return the total number of sectors
-      *(DWORD *)buff = TOTAL_SECTORS;
-      return RES_OK;
-    case GET_SECTOR_SIZE:
-      // Return the sector size
-      *(WORD *)buff = 512;
-      return RES_OK;
-    case GET_BLOCK_SIZE:
-      // Return the block size
-      *(DWORD *)buff = 1; // Assuming no erase block
-      return RES_OK;
-    default:
-        return RES_PARERR;
-  }
-}
-
-DWORD get_fattime(void) {
-    // Return a fixed time for simplicity
-    return ((DWORD)(2024 - 1980) << 25) | ((DWORD)12 << 21) | ((DWORD)31 << 16);
 }

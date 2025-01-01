@@ -55,3 +55,4 @@
 
 
 #define SYS_shutdown 77
+#define SYS_virtio_disk_rw  25

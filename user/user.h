@@ -23,6 +23,10 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int shutdown(void);
+int virtiodiskrw(void *buf,
+    int write,
+    int dev,
+    int blockno);
 
 // ulib.c
 int stat(const char*, struct stat*);
