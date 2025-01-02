@@ -8,6 +8,8 @@
 int
 main(void)
 {
+  
+  write(1, "main() called in zombie\n", 20);
   if(fork() > 0)
     sleep(5);  // Let child exit before parent.
   exit(0);

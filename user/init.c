@@ -114,6 +114,8 @@ char *tests[] = {
 int
 main(int argc, char *argv[])
 {
+
+  write(1, "main() called\n", 14);
   if(open("console", O_RDWR) < 0){
     mknod("console", CONSOLE, 0);
     open("console", O_RDWR);

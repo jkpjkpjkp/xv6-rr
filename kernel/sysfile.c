@@ -26,10 +26,10 @@ argfd(int n, int *pfd, struct file **pf)
   struct file *f;
 
   argint(n, &fd);
-  printf("argfd: n=%d fd=%d\n", n, fd);
-  struct proc *p = myproc();
-  printf("argfd: proc pid=%d name=%s\n", p->pid, p->name);
-  printf("argfd: ofile[%d]=%p\n", fd, p->ofile[fd]);
+  // printf("argfd: n=%d fd=%d\n", n, fd);
+  // struct proc *p = myproc();
+  // printf("argfd: proc pid=%d name=%s\n", p->pid, p->name);
+  // printf("argfd: ofile[%d]=%p\n", fd, p->ofile[fd]);
   if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
     return -1;
   if(pfd)
@@ -225,15 +225,15 @@ sys_write(void)
   struct file *f;
   int n;
   uint64 p;
-  printf("sys_write called\n");
+  // printf("sys_write called\n");
   argaddr(1, &p);
   argint(2, &n);
 
-  printf("sys_write here\n");
+  // printf("sys_write here\n");
   if(argfd(0, 0, &f) < 0)
     return -1;
 
-  printf("sys_write ok\n");
+  // printf("sys_write ok\n");
   return filewrite(f, p, n);
 }
 
