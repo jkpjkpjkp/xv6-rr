@@ -3186,6 +3186,11 @@ static int get_ldnumber (	/* Returns logical drive number (-1:invalid drive numb
 		if (IsDigit(*tp) && tp + 2 == tt) {	/* Is it a numeric volume ID + colon? */
 			i = (int)*tp - '0';	/* Get the logical drive number */
 		}
+		printf("[get_ldnumber] path=%s\n", *path);
+		printf("[get_ldnumber] tt=%s\n", tt);
+		printf("[get_ldnumber] tp=%s\n", tp);
+		printf("[get_ldnumber] chr=%c\n", chr);
+		printf("[get_ldnumber] i=%d\n", i);
 #if FF_STR_VOLUME_ID == 1	/* Arbitrary string volume ID is enabled */
 		else {
 			i = 0;	/* Find volume ID string in the preconfigured table */
@@ -3329,6 +3334,8 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 	b = fs->win[BS_JmpBoot];
 	printf("[check_fs] mid\n");
 	if (b == 0xEB || b == 0xE9 || b == 0xE8) {	/* Valid JumpBoot code? (short jump, near jump or near call) */
+		
+	printf("[check_fs] IN\n");
 		if (sign == 0xAA55 && !memcmp(fs->win + BS_FilSysType32, "FAT32   ", 8)) {
 			return 0;	/* It is an FAT32 VBR */
 		}
@@ -3345,6 +3352,18 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 				return 0;	/* It can be presumed an FAT VBR */
 		}
 	}
+	printf("[check_fs] ERR\n");
+	printf("[check_fs] sign=0x%x\n", sign);
+	printf("[check_fs] b=0x%x\n", b);
+	// printf("[check_fs] w=0x%x\n", w);
+	printf("[check_fs] BPB_BytsPerSec=0x%x\n", ld_word(fs->win + BPB_BytsPerSec));
+	printf("[check_fs] BPB_SecPerClus=0x%x\n", fs->win[BPB_SecPerClus]);
+	printf("[check_fs] BPB_RsvdSecCnt=0x%x\n", ld_word(fs->win + BPB_RsvdSecCnt));
+	printf("[check_fs] BPB_NumFATs=0x%x\n", fs->win[BPB_NumFATs]);
+	printf("[check_fs] BPB_RootEntCnt=0x%x\n", ld_word(fs->win + BPB_RootEntCnt));
+	printf("[check_fs] BPB_TotSec16=0x%x\n", ld_word(fs->win + BPB_TotSec16));
+	printf("[check_fs] BPB_TotSec32=0x%x\n", ld_dword(fs->win + BPB_TotSec32));
+	printf("[check_fs] BPB_FATSz16=0x%x\n", ld_word(fs->win + BPB_FATSz16));
 	return sign == 0xAA55 ? 2 : 3;	/* Not an FAT VBR (with valid or invalid BS) */
 }
 
@@ -3364,7 +3383,7 @@ static UINT find_volume (	/* Returns BS status found in the hosting drive */
 
 	printf("[find_volume] check_fs\n");
 	fmt = check_fs(fs, 0);				/* Load sector 0 and check if it is an FAT VBR as SFD format */
-	printf("[find_volume] check_fs done\n");
+	printf("[find_volume] check_fs done %u\n", fmt);
 	if (fmt != 2 && (fmt >= 3 || part == 0)) return fmt;	/* Returns if it is an FAT VBR as auto scan, not a BS or disk error */
 
 	/* Sector 0 is not an FAT VBR or forced partition number wants a partition */
@@ -3476,7 +3495,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	printf("[mount_volume] find_volume\n");
 	/* Find an FAT volume on the hosting drive */
 	fmt = find_volume(fs, LD2PT(vol));
-	printf("[mount_volume] find_volume done\n");
+	printf("[mount_volume] find_volume done %u\n", fmt);
 	if (fmt == 4) return FR_DISK_ERR;		/* An error occurred in the disk I/O layer */
 	if (fmt >= 2) return FR_NO_FILESYSTEM;	/* No FAT volume is found */
 	bsect = fs->winsect;					/* Volume offset in the hosting physical drive */
@@ -3657,7 +3676,15 @@ static FRESULT validate (	/* Returns FR_OK or FR_INVALID_OBJECT */
 )
 {
 	FRESULT res = FR_INVALID_OBJECT;
-
+	printf("[validate] starting\n");
+	printf("[validate] obj=%p\n", obj);
+	if (obj) {
+		printf("[validate] obj->fs=%p\n", obj->fs);
+		if (obj->fs) {
+			printf("[validate] obj->fs->fs_type=%d\n", obj->fs->fs_type);
+			printf("[validate] obj->id=%d obj->fs->id=%d\n", obj->id, obj->fs->id);
+		}
+	}
 
 	if (obj && obj->fs && obj->fs->fs_type && obj->id == obj->fs->id) {	/* Test if the object is valid */
 #if FF_FS_REENTRANT
@@ -3677,6 +3704,7 @@ static FRESULT validate (	/* Returns FR_OK or FR_INVALID_OBJECT */
 #endif
 	}
 	*rfs = (res == FR_OK) ? obj->fs : 0;	/* Return corresponding filesystem object if it is valid */
+	printf("[validate] res=%d fs=%p\n", res, *rfs);
 	return res;
 }
 
@@ -4650,11 +4678,13 @@ FRESULT f_opendir (
 	FATFS *fs;
 	DEF_NAMBUF
 
-
+	printf("[f_opendir] starting\n");
+	printf("[f_opendir] dp=%p path=%s\n", dp, path);
 	if (!dp) return FR_INVALID_OBJECT;
 
 	/* Get logical drive */
 	res = mount_volume(&path, &fs, 0);
+	printf("[f_opendir] mount_volume res=%d fs=%p\n", res, fs);
 	if (res == FR_OK) {
 		dp->obj.fs = fs;
 		INIT_NAMBUF(fs);
@@ -4745,9 +4775,20 @@ FRESULT f_readdir (
 	FRESULT res;
 	FATFS *fs;
 	DEF_NAMBUF
-
+	printf("[f_readdir] starting\n");
+	printf("[f_readdir] dp=%p\n", dp);
+	printf("[f_readdir] fno=%p\n", fno);
+	if (dp) {
+		printf("[f_readdir] dp->obj.fs=%p\n", dp->obj.fs);
+		printf("[f_readdir] dp->obj.id=%d\n", dp->obj.id);
+		if (dp->obj.fs) {
+			printf("[f_readdir] dp->obj.fs->fs_type=%d\n", dp->obj.fs->fs_type);
+			printf("[f_readdir] dp->obj.id=%d dp->obj.fs->id=%d\n", dp->obj.id, dp->obj.fs->id);
+		}
+	}
 
 	res = validate(&dp->obj, &fs);	/* Check validity of the directory object */
+	printf("[f_readdir] validate=%d\n", res);
 	if (res == FR_OK) {
 		if (!fno) {
 			res = dir_sdi(dp, 0);		/* Rewind the directory object */

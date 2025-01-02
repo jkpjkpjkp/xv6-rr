@@ -326,6 +326,7 @@ ilock(struct inode *ip)
     if(ip->type == 0)
       panic("ilock: no type");
   }
+  printf("[ilock] done\n");
   // printf("[ilock] done\n");
 }
 
@@ -722,7 +723,7 @@ namex(char *path, int nameiparent, char *name)
   // printf("[namex] %d %d\n", ip->dev, ip->inum);
 
   while((path = skipelem(path, name)) != 0){
-    printf("[namex] skipelem\n");
+    // printf("[namex] skipelem\n");
     ilock(ip);
     printf("[namex] locked\n");
     if(ip->type != T_DIR){
@@ -732,6 +733,7 @@ namex(char *path, int nameiparent, char *name)
     printf("[namex] mid while\n");
     if(nameiparent && *path == '\0'){
       // Stop one level early.
+      printf("[namex] Stop one level early\n");
       iunlock(ip);
       return ip;
     }

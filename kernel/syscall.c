@@ -25,10 +25,10 @@ int
 fetchstr(uint64 addr, char *buf, int max)
 {
   struct proc *p = myproc();
-  printf("[fetchstr] A\n");
+  // printf("[fetchstr] A\n");
   if(copyinstr(p->pagetable, buf, addr, max) < 0)
     return -1;
-  printf("[fetchstr] B\n");
+  // printf("[fetchstr] B\n");
   return strlen(buf);
 }
 

@@ -42,7 +42,7 @@ DSTATUS disk_initialize(
 	if (pdrv != DEV_MMC) {
 		return STA_NOINIT;
 	}
-	return 0; // initialized at kernel boot
+	return 0; // do thing. initialized at kernel boot
 }
 
 /*-----------------------------------------------------------------------*/
@@ -55,20 +55,28 @@ DRESULT disk_read(
 	UINT count      /* Number of sectors to read */
 )
 {
+	BYTE *orig_buff = buff;
+	UINT orig_count = count;
+	printf("[disk_read] pdrv=%d sector=%d count=%d\n", pdrv, sector, count);
 	if (pdrv != DEV_MMC) {
 		return RES_PARERR;
 	}
 
+	printf("[disk_read] M\n");
 	// Each virtio block is 1024 bytes (BSIZE), while FAT32 sectors are 512 bytes
 	char tempbuf[1024];
 	uint32 virtio_block = sector / 2;  // Convert FAT sector to virtio block number
 	int offset = (sector % 2) * 512;   // Offset within the virtio block
-
+	
+	printf("[disk_read] L\n");
 	while (count > 0) {
+		printf("[disk_read] W %u\n", count);
 		if (virtiodiskrw(tempbuf, 0, DEV_MMC, virtio_block) < 0) {
+		printf("[disk_read] WE\n");
 			return RES_ERROR;
 		}
 
+		printf("[disk_read] WW\n");
 		// Copy the relevant 512-byte sector from the 1024-byte block
 		int copy_size = 512;
 		if (count == 1) {
@@ -86,15 +94,31 @@ DRESULT disk_read(
 			memcpy(buff, tempbuf + offset, 512);
 			buff += 512;
 			count--;
-			if (offset == 0) {
+			if (offset == 0 && count == 1) {
 				offset = 512;
-			} else {
+			} else if (offset == 512){
 				offset = 0;
 				virtio_block++;
+			} else {
+				printf("DRESULT disk_read\n");
+				while(1)
+					;
 			}
 		}
 	}
-
+	// Sanity check - verify if read data is all zeros
+	if (orig_count > 0) {
+		int all_zeros = 1;
+		for (UINT i = 0; i < orig_count * 512; i++) {
+			if (orig_buff[i] != 0) {
+				all_zeros = 0;
+				break;
+			}
+		}
+		if (all_zeros) {
+			printf("[disk_read] WARNING: read buffer is all zeros\n");
+		}
+	}
 	return RES_OK;
 }
 

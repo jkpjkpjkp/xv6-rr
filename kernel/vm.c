@@ -416,18 +416,18 @@ copyin(pagetable_t pagetable, char *dst, uint64 srcva, uint64 len)
 int
 copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 {
-  printf("[kernel/vm.c:copyinstr] starting\n");
-  printf("[kernel/vm.c:copyinstr] dst=%p srcva=%lu max=%lu\n", dst, srcva, max);
+  // printf("[kernel/vm.c:copyinstr] starting\n");
+  // printf("[kernel/vm.c:copyinstr] dst=%p srcva=%lu max=%lu\n", dst, srcva, max);
   uint64 n, va0, pa0;
   int got_null = 0;
 
   while(got_null == 0 && max > 0){
     va0 = PGROUNDDOWN(srcva);
     pa0 = walkaddr(pagetable, va0);
-    printf("[copyinstr] A\n");
+    // printf("[copyinstr] A\n");
     if(pa0 == 0)
       return -1;
-    printf("[copyinstr] B\n");
+    // printf("[copyinstr] B\n");
     n = PGSIZE - (srcva - va0);
     if(n > max)
       n = max;
@@ -449,8 +449,8 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 
     srcva = va0 + PGSIZE;
   }
-  printf("[kernel/vm.c:copyinstr] got_null=%d max=%lu\n", got_null, max);
-  printf("[kernel/vm.c:copyinstr] dst=%p srcva=%lu\n", dst, srcva);
+  // printf("[kernel/vm.c:copyinstr] got_null=%d max=%lu\n", got_null, max);
+  // printf("[kernel/vm.c:copyinstr] dst=%p srcva=%lu\n", dst, srcva);
   if(got_null){
     return 0;
   } else {

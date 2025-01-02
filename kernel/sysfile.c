@@ -516,10 +516,13 @@ create(char *path, short type, short major, short minor, int fd)
 
   printf("[create] locking dir ip\n");
   ilock(dp);
+  printf("[create] locked\n");
 
   if((ip = dirlookup(dp, name, 0)) != 0){
     iunlockput(dp);
+  printf("[create] locking ip\n");
     ilock(ip);
+  printf("[create] locked ip\n");
     if(type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE))
       return ip;
     iunlockput(ip);
@@ -922,6 +925,7 @@ sys_munmap(void)
 uint64
 sys_virtiodiskrw(void)
 {
+  // printf("[sys_virtiodiskrw] starting\n");
   uint64 buf_addr;
   int write, dev, blockno;
   struct buf b;
@@ -931,16 +935,23 @@ sys_virtiodiskrw(void)
   argint(2, &dev);
   argint(3, &blockno);
 
+  // printf("[sys_virtiodiskrw] initsleeplock\n");
   initsleeplock(&b.lock, "virtio_disk_rw buf");
   b.valid = 0;
   b.disk = 0;
   b.dev = dev;
   b.blockno = blockno;
+  b.refcnt = 0;
+  b.prev = b.next = 0;
+  
 
+  // printf("[sys_virtiodiskrw] copyin\n");
   if(copyin(myproc()->pagetable, (char*)b.data, buf_addr, BSIZE) < 0)
     return -1;
 
+  // printf("[sys_virtiodiskrw] virtio_disk_rw\n");
   virtio_disk_rw(&b, write, dev);
+  // printf("[sys_virtiodiskrw] done\n");
 
   if(!write) {
     if(copyout(myproc()->pagetable, buf_addr, (char*)b.data, BSIZE) < 0)

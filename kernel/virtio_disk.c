@@ -151,6 +151,12 @@ virtio_disk_init(int dev) // 0 for original disk, 1 for fatfs
   status |= VIRTIO_CONFIG_S_DRIVER_OK;
   *R(VIRTIO_MMIO_STATUS, dev) = status;
 
+  printf("virtio disk %d init done\n", dev);
+  printf("virtio disk %d desc: %p\n", dev, disk[dev].desc);
+  printf("virtio disk %d avail: %p\n", dev, disk[dev].avail);
+  printf("virtio disk %d used: %p\n", dev, disk[dev].used);
+  printf("virtio disk %d status: 0x%x\n", dev, status);
+  printf("virtio disk %d queue num: %d\n", dev, NUM);
   // plic.c and trap.c arrange for interrupts from VIRTIO0_IRQ.
 }
 
@@ -217,6 +223,7 @@ alloc3_desc(int *idx, int dev)
 void
 virtio_disk_rw(struct buf *b, int write, int dev)
 {
+  printf("[virtio_disk_rw] starting dev=%d blockno=%d write=%d\n", dev, b->blockno, write);
   uint64 sector = b->blockno * (BSIZE / 512);
 
   acquire(&disk[dev].vdisk_lock);
@@ -227,12 +234,15 @@ virtio_disk_rw(struct buf *b, int write, int dev)
 
   // allocate the three descriptors.
   int idx[3];
+
   while(1){
     if(alloc3_desc(idx, dev) == 0) {
       break;
     }
     sleep(&disk[dev].free[0], &disk[dev].vdisk_lock);
   }
+printf("[virtio_disk_rw] sector=%lu, write=%d\n", sector, write);
+printf("[virtio_disk_rw] Descriptor indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
 
   // format the three descriptors.
   // qemu's virtio-blk.c reads them.
@@ -246,10 +256,12 @@ virtio_disk_rw(struct buf *b, int write, int dev)
   buf0->reserved = 0;
   buf0->sector = sector;
 
+  // printf("[virtio_disk_rw] A\n");
   disk[dev].desc[idx[0]].addr = (uint64) buf0;
   disk[dev].desc[idx[0]].len = sizeof(struct virtio_blk_req);
   disk[dev].desc[idx[0]].flags = VRING_DESC_F_NEXT;
   disk[dev].desc[idx[0]].next = idx[1];
+  // printf("[virtio_disk_rw] B\n");
 
   disk[dev].desc[idx[1]].addr = (uint64) b->data;
   disk[dev].desc[idx[1]].len = BSIZE;
@@ -259,12 +271,14 @@ virtio_disk_rw(struct buf *b, int write, int dev)
     disk[dev].desc[idx[1]].flags = VRING_DESC_F_WRITE; // device writes b->data
   disk[dev].desc[idx[1]].flags |= VRING_DESC_F_NEXT;
   disk[dev].desc[idx[1]].next = idx[2];
+  // printf("[virtio_disk_rw] C\n");
 
   disk[dev].info[idx[0]].status = 0xff; // device writes 0 on success
   disk[dev].desc[idx[2]].addr = (uint64) &disk[dev].info[idx[0]].status;
   disk[dev].desc[idx[2]].len = 1;
   disk[dev].desc[idx[2]].flags = VRING_DESC_F_WRITE; // device writes the status
   disk[dev].desc[idx[2]].next = 0;
+  // printf("[virtio_disk_rw] D\n");
 
   // record struct buf for virtio_disk_intr().
   b->disk = 1;
@@ -274,28 +288,84 @@ virtio_disk_rw(struct buf *b, int write, int dev)
   disk[dev].avail->ring[disk[dev].avail->idx % NUM] = idx[0];
 
   __sync_synchronize();
+  // printf("[virtio_disk_rw] E\n");
 
   // tell the device another avail ring entry is available.
   disk[dev].avail->idx += 1; // not % NUM ...
 
   __sync_synchronize();
+  // printf("[virtio_disk_rw] F\n");
 
   *R(VIRTIO_MMIO_QUEUE_NOTIFY, dev) = 0; // value is queue number
 
   // Wait for virtio_disk_intr() to say request has finished.
+  // printf("[virtio_disk_rw] no one\n");
   while(b->disk == 1) {
+  // printf("[virtio_disk_rw] awake\n");
+  //   printf("[virtio_disk_rw] waiting for disk completion: disk=%d b->disk=%d\n", dev, b->disk);
     sleep(b, &disk[dev].vdisk_lock);
   }
+  // printf("[virtio_disk_rw] no one done\n");
 
+  printf("[virtio_disk_rw] Debug info:\n");
+  printf("  Device: %d\n", dev);
+  printf("  Block number: %d\n", b->blockno);
+  printf("  Write operation: %d\n", write);
+  printf("  Descriptor chain indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
+  printf("  Descriptor 0 addr: 0x%lx len: %d flags: 0x%x next: %d\n", 
+         disk[dev].desc[idx[0]].addr,
+         disk[dev].desc[idx[0]].len,
+         disk[dev].desc[idx[0]].flags,
+         disk[dev].desc[idx[0]].next);
+  printf("  Descriptor 1 addr: 0x%lx len: %d flags: 0x%x next: %d\n",
+         disk[dev].desc[idx[1]].addr, 
+         disk[dev].desc[idx[1]].len,
+         disk[dev].desc[idx[1]].flags,
+         disk[dev].desc[idx[1]].next);
+  printf("  Descriptor 2 addr: 0x%lx len: %d flags: 0x%x next: %d\n",
+         disk[dev].desc[idx[2]].addr,
+         disk[dev].desc[idx[2]].len, 
+         disk[dev].desc[idx[2]].flags,
+         disk[dev].desc[idx[2]].next);
+  printf("  Status: 0x%x\n", disk[dev].info[idx[0]].status);
+  printf("  Available idx: %d\n", disk[dev].avail->idx);
+  printf("  Used idx: %d\n", disk[dev].used_idx);
+  printf("  Buffer disk flag: %d\n", b->disk);
+  
+  // Print first few bytes of data buffer
+  printf("  Data buffer contents (first 16 bytes):\n  ");
+  for(int i = 0; i < 16; i++) {
+    printf("%02x ", ((unsigned char*)b->data)[i]);
+  }
+  printf("\n");
   disk[dev].info[idx[0]].b = 0;
+  // printf("[virtio_disk_rw] free_chain\n");
   free_chain(idx[0], dev);
+  // printf("[virtio_disk_rw] release\n");
 
   release(&disk[dev].vdisk_lock);
+  // printf("[virtio_disk_rw] done\n");
+
+  // For reads, check if buffer is all zeros as a sanity check
+  if(!write) {
+    int all_zeros = 1;
+    char *data = (char*)b->data;
+    for(int i = 0; i < BSIZE; i++) {
+      if(data[i] != 0) {
+        all_zeros = 0;
+        break;
+      }
+    }
+    if(all_zeros) {
+      printf("[virtio_disk_rw] WARNING: read buffer is all zeros\n"); 
+    }
+  }
 }
 
 void
 virtio_disk_intr(int dev)
 {
+  // printf("[virtio_disk_intr] starting dev=%d\n", dev);
   acquire(&disk[dev].vdisk_lock);
 
   // the device won't raise another interrupt until we tell it
@@ -319,11 +389,14 @@ virtio_disk_intr(int dev)
       panic("virtio_disk_intr status");
 
     struct buf *b = disk[dev].info[id].b;
+  // printf("[virtio_disk_intr] S\n");
     b->disk = 0;   // disk is done with buf
+  // printf("[virtio_disk_intr] P\n");
     wakeup(b);
 
     disk[dev].used_idx += 1;
   }
 
   release(&disk[dev].vdisk_lock);
+  // printf("[virtio_disk_intr] returning\n");
 }

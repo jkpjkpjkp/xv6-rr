@@ -12,6 +12,7 @@
 uint64
 copy_file_from_fat32(char *filename)
 {
+  printf("[copy_file_from_fat32] %s\n", filename);
   FIL fp;
   char path[MAXPATH], buf[BSIZE];
   FSIZE_t sz;
@@ -21,6 +22,7 @@ copy_file_from_fat32(char *filename)
   // Create path for the file
   memmove(path, "/sdcard/", 8);
   memmove(path+8, filename, strlen(filename)+1);
+  printf("[user/init.c:copy_file_from_fat32] %s\n", path);
   
   // Open destination file
   fd = open(path, O_CREATE | O_WRONLY);
@@ -28,12 +30,13 @@ copy_file_from_fat32(char *filename)
     printf("failed to create %s\n", path);
     return -1;
   }
-
+  printf("[user/init.c:copy_file_from_fat32] before f_open\n");
   // Open source file from FAT32
   if(f_open(&fp, path+7, FA_READ) != FR_OK) {
     close(fd);
     return -1;
   }
+  printf("[user/init.c:copy_file_from_fat32] after f_open\n");
 
   // Get file size
   sz = f_size(&fp);
@@ -61,18 +64,38 @@ copy_file_from_fat32(char *filename)
 uint64
 copy_all_files()
 {
+  printf("[user/init.c:copy_all_files] starting\n");
   FATFS fs;
   DIR dp;
   FILINFO fno;
   mkdir("/sdcard");
+  printf("[user/init.c:copy_all_files] made dir\n");
   fs.pdrv = 1;
   f_mount(&fs, "1:", 1);
-  f_opendir(&dp, "/");
-  while(f_readdir(&dp, &fno)){
+  printf("[user/init.c:copy_all_files] mounted\n");
+  f_opendir(&dp, "1:/");
+  printf("[user/init.c:copy_all_files] f_opendir\n");
+  printf("[user/init.c:copy_all_files] dp.obj.fs=0x%p\n", dp.obj.fs);
+  printf("[user/init.c:copy_all_files] dp.obj.id=%d\n", dp.obj.id);
+  printf("[user/init.c:copy_all_files] dp.obj.attr=%d\n", dp.obj.attr);
+  printf("[user/init.c:copy_all_files] dp.obj.sclust=%u\n", dp.obj.sclust);
+  printf("[user/init.c:copy_all_files] dp.obj.objsize=%u\n", dp.obj.objsize);
+  printf("[user/init.c:copy_all_files] dp.obj.stat=%d\n", dp.obj.stat);
+  printf("[user/init.c:copy_all_files] dp.dptr=%u\n", dp.dptr);
+  printf("[user/init.c:copy_all_files] dp.clust=%u\n", dp.clust);
+  printf("[user/init.c:copy_all_files] dp.sect=%u\n", dp.sect);
+  printf("[user/init.c:copy_all_files] dp.dir=%p\n", dp.dir);
+  printf("[user/init.c:copy_all_files] dp.fn=%p\n", dp.fn);
+  while(f_readdir(&dp, &fno) == FR_OK){
+
+    printf("[user/init.c:copy_all_files] 1\n");
     if(fno.fattrib & AM_DIR)
       continue;
-    copy_file_from_fat32(fno.fname);
+    if(*fno.fname != '\0')
+      copy_file_from_fat32(fno.fname);
   }
+  while(1)
+    ;
   return 0;
 }
 
@@ -129,9 +152,10 @@ main(int argc, char *argv[])
   // Force flush of stdout
   fprintf(1, "Forced stdout: init starting\n");
   
-  while(1)
-    ;
-  return 0;
+  // while(1)
+  //   ;
+  // return 0;
+  printf("[user/init.c:main] copy_all_files\n");
   copy_all_files();
   int pid, wpid;
   char path[64];
