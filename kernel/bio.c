@@ -58,10 +58,12 @@ binit(void)
 struct buf*
 bget(uint dev, uint blockno)
 {
+  printf("[bget] looking for block %d on device %d\n", blockno, dev);
   struct buf *b;
 
   acquire(&bcache.lock);
 
+  printf("[bget] A\n");
   // Is the block already cached?
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
@@ -72,6 +74,7 @@ bget(uint dev, uint blockno)
     }
   }
 
+  printf("[bget] A\n");
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
   for(b = bcache.head.prev; b != &bcache.head; b = b->prev){

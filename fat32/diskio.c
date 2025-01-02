@@ -71,6 +71,8 @@ DRESULT disk_read(
 	printf("[disk_read] L\n");
 	while (count > 0) {
 		printf("[disk_read] W %u\n", count);
+		printf("[disk_read] Reading virtio_block=%u offset=%d count=%u buff=%p tempbuf=%p\n", 
+			virtio_block, offset, count, buff, tempbuf);
 		if (virtiodiskrw(tempbuf, 0, DEV_MMC, virtio_block) < 0) {
 		printf("[disk_read] WE\n");
 			return RES_ERROR;

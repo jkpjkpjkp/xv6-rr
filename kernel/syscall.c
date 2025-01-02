@@ -174,6 +174,12 @@ syscall(void)
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
+  if(num== 25) {
+    printf("[kernel/syscall.c:syscall] fcntl syscall detected (num=25)\n");
+    printf("[kernel/syscall.c:syscall] fcntl args: fd=%ld cmd=%ld arg=%ld\n", 
+          p->trapframe->a0, p->trapframe->a1, p->trapframe->a2);
+
+  }
   // printf("[kernel/syscall.c:syscall] syscall number=%d\n", num);
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,

@@ -2340,12 +2340,15 @@ static FRESULT dir_read (
 	FRESULT res = FR_NO_FILE;
 	FATFS *fs = dp->obj.fs;
 	BYTE attr, b;
+	printf("[dir_read] starting\n");
 #if FF_USE_LFN
 	BYTE ord = 0xFF, sum = 0xFF;
 #endif
 
 	while (dp->sect) {
+	printf("[dir_read] move_window\n");
 		res = move_window(fs, dp->sect);
+	printf("[dir_read] move_window done\n");
 		if (res != FR_OK) break;
 		b = dp->dir[DIR_Name];	/* Test for the entry type */
 		if (b == 0) {
@@ -3570,10 +3573,10 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	} else
 #endif	/* FF_FS_EXFAT */
 	{
-	printf("[mount_volume] FF_FS_FAT\n");
+	// printf("[mount_volume] FF_FS_FAT\n");
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 
-	printf("[mount_volume] not 13\n");
+	// printf("[mount_volume] not 13\n");
 		fasize = ld_word(fs->win + BPB_FATSz16);		/* Number of sectors per FAT */
 		if (fasize == 0) fasize = ld_dword(fs->win + BPB_FATSz32);
 		fs->fsize = fasize;
@@ -3582,7 +3585,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (fs->n_fats != 1 && fs->n_fats != 2) return FR_NO_FILESYSTEM;	/* (Must be 1 or 2) */
 		fasize *= fs->n_fats;							/* Number of sectors for FAT area */
 
-	printf("[mount_volume] B\n");
+	// printf("[mount_volume] B\n");
 		fs->csize = fs->win[BPB_SecPerClus];			/* Cluster size */
 		if (fs->csize == 0 || (fs->csize & (fs->csize - 1))) return FR_NO_FILESYSTEM;	/* (Must be power of 2) */
 
@@ -3592,7 +3595,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		tsect = ld_word(fs->win + BPB_TotSec16);		/* Number of sectors on the volume */
 		if (tsect == 0) tsect = ld_dword(fs->win + BPB_TotSec32);
 
-	printf("[mount_volume] D\n");
+	// printf("[mount_volume] D\n");
 		nrsv = ld_word(fs->win + BPB_RsvdSecCnt);		/* Number of reserved sectors */
 		if (nrsv == 0) return FR_NO_FILESYSTEM;			/* (Must not be 0) */
 
@@ -3603,11 +3606,11 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (nclst == 0) return FR_NO_FILESYSTEM;		/* (Invalid volume size) */
 		fmt = 0;
 		if (nclst <= MAX_FAT32) fmt = FS_FAT32;
-		printf("[mount_volume] nclst: %u\n", nclst);
-		printf("[mount_volume] MAX_FAT32: %u\n", MAX_FAT32);
-		printf("[mount_volume] MAX_FAT16: %u\n", MAX_FAT16); 
-		printf("[mount_volume] MAX_FAT12: %u\n", MAX_FAT12);
-		printf("[mount_volume] Current fmt: %d\n", fmt);
+		// printf("[mount_volume] nclst: %u\n", nclst);
+		// printf("[mount_volume] MAX_FAT32: %u\n", MAX_FAT32);
+		// printf("[mount_volume] MAX_FAT16: %u\n", MAX_FAT16); 
+		// printf("[mount_volume] MAX_FAT12: %u\n", MAX_FAT12);
+		// printf("[mount_volume] Current fmt: %d\n", fmt);
 		// if (nclst <= MAX_FAT16) fmt = FS_FAT16;
 		// if (nclst <= MAX_FAT12) fmt = FS_FAT12;
 		if (fmt == 0) return FR_NO_FILESYSTEM;
@@ -4813,19 +4816,26 @@ FRESULT f_readdir (
 	printf("[f_readdir] validate=%d\n", res);
 	if (res == FR_OK) {
 		if (!fno) {
+	printf("[f_readdir] A\n");
 			res = dir_sdi(dp, 0);		/* Rewind the directory object */
 		} else {
+	printf("[f_readdir] B\n");
 			INIT_NAMBUF(fs);
+	printf("[f_readdir] BB\n");
 			res = DIR_READ_FILE(dp);		/* Read an item */
+	printf("[f_readdir] BBB\n");
 			if (res == FR_NO_FILE) res = FR_OK;	/* Ignore end of directory */
 			if (res == FR_OK) {				/* A valid entry is found */
+	printf("[f_readdir] C\n");
 				get_fileinfo(dp, fno);		/* Get the object information */
+	printf("[f_readdir] D\n");
 				res = dir_next(dp, 0);		/* Increment index for next */
 				if (res == FR_NO_FILE) res = FR_OK;	/* Ignore end of directory now */
 			}
 			FREE_NAMBUF();
 		}
 	}
+	printf("[f_readdir] done");
 	LEAVE_FF(fs, res);
 }
 

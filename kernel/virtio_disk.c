@@ -234,8 +234,8 @@ alloc3_desc(int *idx, int dev)
 void
 virtio_disk_rw(struct buf *b, int write, int dev)
 {
-  printf("[virtio_disk_rw] starting dev=%d blockno=%d write=%d\n",
-         dev, b->blockno, write);
+  // printf("[virtio_disk_rw] starting dev=%d blockno=%d write=%d\n",
+        //  dev, b->blockno, write);
 
   // Check buffer pointer range or alignment if you suspect an invalid pointer.
   // Replace KERNBASE/PHYSTOP with whatever region is valid for your system.
@@ -259,9 +259,9 @@ virtio_disk_rw(struct buf *b, int write, int dev)
     sleep(&disk[dev].free[0], &disk[dev].vdisk_lock);
   }
 
-  printf("[virtio_disk_rw] sector=%lu, write=%d\n", sector, write);
-  printf("[virtio_disk_rw] Descriptor indices allocated: %d, %d, %d\n",
-         idx[0], idx[1], idx[2]);
+  // printf("[virtio_disk_rw] sector=%lu, write=%d\n", sector, write);
+  // printf("[virtio_disk_rw] Descriptor indices allocated: %d, %d, %d\n",
+        //  idx[0], idx[1], idx[2]);
 
   struct virtio_blk_req *buf0 = &disk[dev].ops[idx[0]];
 
