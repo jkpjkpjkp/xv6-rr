@@ -201,7 +201,7 @@ devintr()
     } else if(irq == VIRTIO0_IRQ){
       virtio_disk_intr(0);
     } else if(irq == VIRTIO1_IRQ){
-      virtio_disk_intr(0);
+      virtio_disk_intr(1);
     } else if(irq){
       printf("unexpected interrupt irq=%d\n", irq);
     }
