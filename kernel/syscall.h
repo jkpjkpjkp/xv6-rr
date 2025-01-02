@@ -2,12 +2,14 @@
 #define SYS_fork    1
 #define SYS_clone   220
 #define SYS_exit    93
+#define SYS_exitold 2
 #define SYS_wait    3
 #define SYS_pipe2   59
 #define SYS_pipe    SYS_pipe2
 #define SYS_read    63
 #define SYS_kill    6
 #define SYS_exec    221
+#define SYS_execold 7
 #define SYS_execve  SYS_exec
 #define SYS_fstat   80
 #define SYS_chdir   49

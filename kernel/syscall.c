@@ -128,11 +128,13 @@ extern uint64 sys_virtiodiskrw(void);
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
+[SYS_exitold] sys_exit,
 [SYS_wait]    sys_wait,
 [SYS_pipe2]    sys_pipe,
 [SYS_read]    sys_read,
 [SYS_kill]    sys_kill,
 [SYS_exec]    sys_exec,
+[SYS_execold] sys_exec,
 [SYS_fstat]   sys_fstat,
 [SYS_chdir]   sys_chdir,
 [SYS_dup]     sys_dup,
