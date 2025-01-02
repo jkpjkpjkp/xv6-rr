@@ -36,4 +36,5 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
-entry("shutdown")
+entry("shutdown");
+entry("virtiodiskrw");

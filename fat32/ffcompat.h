@@ -11,8 +11,8 @@ typedef unsigned int   UINT;
 typedef uint32        DWORD;
 
 // Function declarations (normally from string.h)
-int strncmp(const char*, const char*, uint);
-void* memmove(void*, const void*, uint);
+extern int strncmp(const char*, const char*, uint);
+extern void* memmove(void*, const void*, uint);
 
 // Function mappings with correct type signatures
 #define memset(dst, val, cnt)  memset_custom(dst, val, cnt)

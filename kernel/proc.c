@@ -235,6 +235,8 @@ unsigned char initcode[] = {
 };
 
 // Set up first user process.
+// t=0 executes dummy (exits immediately)
+// t=1 executes /init
 void
 userinit(int t)
 {

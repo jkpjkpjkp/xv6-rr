@@ -32,8 +32,7 @@ OBJS = \
   $K/sysfile.o \
   $K/kernelvec.o \
   $K/plic.o \
-  $K/virtio_disk.o \
-  $(FAT32_SRC:.c=.o)
+  $K/virtio_disk.o
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -100,7 +99,8 @@ $U/initcode: $U/initcode.S
 tags: $(OBJS) _init
 	etags *.S *.c
 
-ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o
+ULIB = $U/ulib.o $U/usys.o $U/printf.o $U/umalloc.o \
+       fat32/ff.o fat32/ffsystem.o fat32/ffunicode.o fat32/diskio.o
 
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -T $U/user.ld -o $@ $^
@@ -189,3 +189,6 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 
 /init: $U/init.c $(ULIB)
 	$(CC) $(CFLAGS) -static -o /init $^
+
+fat32/%.o: fat32/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<

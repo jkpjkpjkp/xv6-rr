@@ -10,7 +10,6 @@
 #include "ff.h"			/* Obtains integer types */
 #include "diskio.h"		/* Declarations of disk functions */
 #include "user/user.h"
-#include "kernel/printf.h"
 
 /* Definitions of physical drive number for each drive */
 #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
@@ -18,217 +17,200 @@
 #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 	
 
-// /*-----------------------------------------------------------------------*/
-// /* Get Drive Status                                                      */
-// /*-----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/* Get Drive Status                                                      */
+/*-----------------------------------------------------------------------*/
 
 DSTATUS disk_status (
 	BYTE pdrv		/* Physical drive nmuber to identify the drive */
 )
 {
-	DSTATUS stat;
-	int result;
-
-    assert(pdrv == 1);
-    
-
-	switch (pdrv) {
-	case DEV_RAM :
-		result = RAM_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_MMC :
-		result = MMC_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
-
-	case DEV_USB :
-		result = USB_disk_status();
-
-		// translate the reslut code here
-
-		return stat;
+	if (pdrv != DEV_MMC) {
+		return STA_NOINIT;
 	}
-	return STA_NOINIT;
+	return 0; // Drive is initialized and ready
 }
 
 
+/*-----------------------------------------------------------------------*/
+/* Initialize a Drive                                                    */
+/*-----------------------------------------------------------------------*/
+DSTATUS disk_initialize(
+	BYTE pdrv
+)
+{
+	if (pdrv != DEV_MMC) {
+		return STA_NOINIT;
+	}
+	return 0; // initialized at kernel boot
+}
 
-// /*-----------------------------------------------------------------------*/
-// /* Inidialize a Drive                                                    */
-// /*-----------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------*/
+/* Read Sector(s)                                                        */
+/*-----------------------------------------------------------------------*/
+DRESULT disk_read(
+	BYTE pdrv,      /* Physical drive number to identify the drive */
+	BYTE *buff,     /* Data buffer to store read data */
+	LBA_t sector,   /* Start sector in LBA */
+	UINT count      /* Number of sectors to read */
+)
+{
+	if (pdrv != DEV_MMC) {
+		return RES_PARERR;
+	}
 
-// DSTATUS disk_initialize (
-// 	BYTE pdrv				/* Physical drive nmuber to identify the drive */
-// )
-// {
-// 	DSTATUS stat;
-// 	int result;
+	// Each virtio block is 1024 bytes (BSIZE), while FAT32 sectors are 512 bytes
+	char tempbuf[1024];
+	uint32 virtio_block = sector / 2;  // Convert FAT sector to virtio block number
+	int offset = (sector % 2) * 512;   // Offset within the virtio block
 
-// 	switch (pdrv) {
-// 	case DEV_RAM :
-// 		result = RAM_disk_initialize();
+	while (count > 0) {
+		if (virtiodiskrw(tempbuf, 0, DEV_MMC, virtio_block) < 0) {
+			return RES_ERROR;
+		}
 
-// 		// translate the reslut code here
+		// Copy the relevant 512-byte sector from the 1024-byte block
+		int copy_size = 512;
+		if (count == 1) {
+			memcpy(buff, tempbuf + offset, copy_size);
+			break;
+		}
 
-// 		return stat;
+		// If we're at the first half of a block, we might need to read both halves
+		if (offset == 0 && count >= 2) {
+			memcpy(buff, tempbuf, 1024);
+			buff += 1024;
+			count -= 2;
+			virtio_block++;
+		} else {
+			memcpy(buff, tempbuf + offset, 512);
+			buff += 512;
+			count--;
+			if (offset == 0) {
+				offset = 512;
+			} else {
+				offset = 0;
+				virtio_block++;
+			}
+		}
+	}
 
-// 	case DEV_MMC :
-// 		result = MMC_disk_initialize();
+	return RES_OK;
+}
 
-// 		// translate the reslut code here
+/*-----------------------------------------------------------------------*/
+/* Write Sector(s)                                                       */
+/*-----------------------------------------------------------------------*/
+#if FF_FS_READONLY == 0
+DRESULT disk_write(
+	BYTE pdrv,          /* Physical drive number to identify the drive */
+	const BYTE *buff,   /* Data to be written */
+	LBA_t sector,       /* Start sector in LBA */
+	UINT count          /* Number of sectors to write */
+)
+{
+	if (pdrv != DEV_MMC) {
+		return RES_PARERR;
+	}
 
-// 		return stat;
+	char tempbuf[1024];
+	uint32 virtio_block = sector / 2;
+	int offset = (sector % 2) * 512;
 
-// 	case DEV_USB :
-// 		result = USB_disk_initialize();
+	while (count > 0) {
+		// If writing to the second half of a block or a partial block,
+		// we need to read the existing block first
+		if (offset == 512 || (count == 1 && offset == 0)) {
+			if (virtiodiskrw(tempbuf, 0, DEV_MMC, virtio_block) < 0) {
+				return RES_ERROR;
+			}
+		}
 
-// 		// translate the reslut code here
+		if (count == 1) {
+			memcpy(tempbuf + offset, buff, 512);
+			if (virtiodiskrw(tempbuf, 1, DEV_MMC, virtio_block) < 0) {
+				return RES_ERROR;
+			}
+			break;
+		}
 
-// 		return stat;
-// 	}
-// 	return STA_NOINIT;
-// }
+		// If we're aligned to the start of a block and have at least 2 sectors
+		if (offset == 0 && count >= 2) {
+			memcpy(tempbuf, buff, 1024);
+			if (virtiodiskrw(tempbuf, 1, DEV_MMC, virtio_block) < 0) {
+				return RES_ERROR;
+			}
+			buff += 1024;
+			count -= 2;
+			virtio_block++;
+		} else {
+			memcpy(tempbuf + offset, buff, 512);
+			if (virtiodiskrw(tempbuf, 1, DEV_MMC, virtio_block) < 0) {
+				return RES_ERROR;
+			}
+			buff += 512;
+			count--;
+			if (offset == 0) {
+				offset = 512;
+			} else {
+				offset = 0;
+				virtio_block++;
+			}
+		}
+	}
 
+	return RES_OK;
+}
+#endif
 
+/*-----------------------------------------------------------------------*/
+/* Miscellaneous Functions                                               */
+/*-----------------------------------------------------------------------*/
+DRESULT disk_ioctl(
+	BYTE pdrv,     /* Physical drive number */
+	BYTE cmd,      /* Control command code */
+	void *buff     /* Parameter and data buffer */
+)
+{
+	if (pdrv != DEV_MMC) {
+		return RES_PARERR;
+	}
 
-// /*-----------------------------------------------------------------------*/
-// /* Read Sector(s)                                                        */
-// /*-----------------------------------------------------------------------*/
+	switch (cmd) {
+		case CTRL_SYNC:
+			// No need for explicit sync in this implementation
+			return RES_OK;
 
-// DRESULT disk_read (
-// 	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
-// 	BYTE *buff,		/* Data buffer to store read data */
-// 	LBA_t sector,	/* Start sector in LBA */
-// 	UINT count		/* Number of sectors to read */
-// )
-// {
-// 	DRESULT res;
-// 	int result;
+		case GET_SECTOR_SIZE:
+			*(WORD*)buff = 512;  // Standard sector size for FAT32
+			return RES_OK;
 
-// 	switch (pdrv) {
-// 	case DEV_RAM :
-// 		// translate the arguments here
+		case GET_BLOCK_SIZE:
+			*(DWORD*)buff = 1;   // No special erase block size
+			return RES_OK;
 
-// 		result = RAM_disk_read(buff, sector, count);
+		case GET_SECTOR_COUNT:
+			// You might want to adjust this based on your actual disk size
+			*(DWORD*)buff = 131072; // 64MB in 512-byte sectors
+			return RES_OK;
 
-// 		// translate the reslut code here
+		default:
+			return RES_PARERR;
+	}
+}
 
-// 		return res;
-
-// 	case DEV_MMC :
-// 		// translate the arguments here
-
-// 		result = MMC_disk_read(buff, sector, count);
-
-// 		// translate the reslut code here
-
-// 		return res;
-
-// 	case DEV_USB :
-// 		// translate the arguments here
-
-// 		result = USB_disk_read(buff, sector, count);
-
-// 		// translate the reslut code here
-
-// 		return res;
-// 	}
-
-// 	return RES_PARERR;
-// }
-
-
-
-// /*-----------------------------------------------------------------------*/
-// /* Write Sector(s)                                                       */
-// /*-----------------------------------------------------------------------*/
-
-// #if FF_FS_READONLY == 0
-
-// DRESULT disk_write (
-// 	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
-// 	const BYTE *buff,	/* Data to be written */
-// 	LBA_t sector,		/* Start sector in LBA */
-// 	UINT count			/* Number of sectors to write */
-// )
-// {
-// 	DRESULT res;
-// 	int result;
-
-// 	switch (pdrv) {
-// 	case DEV_RAM :
-// 		// translate the arguments here
-
-// 		result = RAM_disk_write(buff, sector, count);
-
-// 		// translate the reslut code here
-
-// 		return res;
-
-// 	case DEV_MMC :
-// 		// translate the arguments here
-
-// 		result = MMC_disk_write(buff, sector, count);
-
-// 		// translate the reslut code here
-
-// 		return res;
-
-// 	case DEV_USB :
-// 		// translate the arguments here
-
-// 		result = USB_disk_write(buff, sector, count);
-
-// 		// translate the reslut code here
-
-// 		return res;
-// 	}
-
-// 	return RES_PARERR;
-// }
-
-// #endif
-
-
-// /*-----------------------------------------------------------------------*/
-// /* Miscellaneous Functions                                               */
-// /*-----------------------------------------------------------------------*/
-
-// DRESULT disk_ioctl (
-// 	BYTE pdrv,		/* Physical drive nmuber (0..) */
-// 	BYTE cmd,		/* Control code */
-// 	void *buff		/* Buffer to send/receive control data */
-// )
-// {
-// 	DRESULT res;
-// 	int result;
-
-// 	switch (pdrv) {
-// 	case DEV_RAM :
-
-// 		// Process of the command for the RAM drive
-
-// 		return res;
-
-// 	case DEV_MMC :
-
-// 		// Process of the command for the MMC/SD card
-
-// 		return res;
-
-// 	case DEV_USB :
-
-// 		// Process of the command the USB drive
-
-// 		return res;
-// 	}
-
-// 	return RES_PARERR;
-// }
+/*-----------------------------------------------------------------------*/
+/* Get current time for FAT filesystem                                   */
+/*-----------------------------------------------------------------------*/
+DWORD get_fattime(void)
+{
+	// Return a fixed timestamp for simplicity
+	// You could implement a real time source if needed
+	return ((DWORD)(2024 - 1980) << 25) |   // Year (2024)
+		   ((DWORD)3 << 21) |               // Month (March)
+		   ((DWORD)1 << 16) |               // Day (1)
+		   ((DWORD)12 << 11) |              // Hour (12)
+		   ((DWORD)0 << 5) |                // Minute (0)
+		   ((DWORD)0 >> 1);                 // Second (0)
+}
 

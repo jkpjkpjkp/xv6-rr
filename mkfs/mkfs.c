@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <sys/stat.h>
 
 #define stat xv6_stat  // avoid clash with host struct stat
 #include "kernel/types.h"
@@ -127,6 +128,8 @@ main(int argc, char *argv[])
   strcpy(de.name, "..");
   iappend(rootino, &de, sizeof(de));
 
+  printf("Maximum file size supported: %lu bytes\n", MAXFILE * BSIZE);
+
   for(i = 2; i < argc; i++){
     // get rid of "user/"
     char *shortname;
@@ -135,6 +138,21 @@ main(int argc, char *argv[])
     else
       shortname = argv[i];
     
+    // Add file size check
+    #undef stat
+    struct stat st;
+    if (stat(argv[i], &st) < 0)
+      die(argv[i]);
+    
+    printf("File %s size: %ld bytes", argv[i], st.st_size);
+    if (st.st_size > MAXFILE * BSIZE) {
+      printf(" (TOO LARGE!)\n");
+      fprintf(stderr, "Error: %s is too large (%ld bytes). Maximum size is %lu bytes\n", 
+              argv[i], st.st_size, MAXFILE * BSIZE);
+      exit(1);
+    }
+    printf("\n");
+
     assert(index(shortname, '/') == 0);
 
     if((fd = open(argv[i], 0)) < 0)

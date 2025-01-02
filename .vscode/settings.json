@@ -5,6 +5,9 @@
         "inode.h": "c",
         "fcntl.h": "c",
         "printf.h": "c",
-        "ffcompat.h": "c"
+        "ffcompat.h": "c",
+        "user.h": "c",
+        "fs.h": "c",
+        "types.h": "c"
     }
 }

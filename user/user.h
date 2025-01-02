@@ -28,6 +28,7 @@ int virtiodiskrw(void *buf,
     int dev,
     int blockno);
 
+typedef unsigned int uint;
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

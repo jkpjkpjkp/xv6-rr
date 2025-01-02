@@ -1,11 +1,11 @@
+#include "user/user.h"
 #include "kernel/types.h"
 #include "kernel/stat.h"
+#include "kernel/fcntl.h"
 #include "kernel/spinlock.h"
 #include "kernel/sleeplock.h"
 #include "kernel/fs.h"
 #include "kernel/file.h"
-#include "user/user.h"
-#include "kernel/fcntl.h"
 #include "kernel/param.h"
 #include "fat32/ff.h"
 
@@ -16,21 +16,45 @@ copy_file_from_fat32(char *filename)
   char path[MAXPATH], buf[BSIZE];
   FSIZE_t sz;
   UINT br;
-  struct inode *ip;
-  strncpy(path, "/sdcard/", 10);
-  safestrcpy(path+8, filename, MAXPATH - 10);
-  ip = create(path, T_FILE, 0, 0, 0);
-  f_open(&fp, path+7, FA_READ);
-  sz = f_size(&fp);
-  for(int i = 0; i < sz; i += BSIZE){
-    f_read (
-      &fp,     /* [IN] File object */
-      buf,  /* [OUT] Buffer to store read data */
-      BSIZE,    /* [IN] Number of bytes to read */
-      &br     /* [OUT] Number of bytes read */
-    );
-    writei(ip, 0, (uint64)buf, i, br);
+  int fd;
+
+  // Create path for the file
+  memmove(path, "/sdcard/", 8);
+  memmove(path+8, filename, strlen(filename)+1);
+  
+  // Open destination file
+  fd = open(path, O_CREATE | O_WRONLY);
+  if(fd < 0) {
+    printf("failed to create %s\n", path);
+    return -1;
   }
+
+  // Open source file from FAT32
+  if(f_open(&fp, path+7, FA_READ) != FR_OK) {
+    close(fd);
+    return -1;
+  }
+
+  // Get file size
+  sz = f_size(&fp);
+
+  // Copy data
+  for(int i = 0; i < sz; i += BSIZE) {
+    if(f_read(&fp, buf, BSIZE, &br) != FR_OK) {
+      close(fd);
+      f_close(&fp);
+      return -1;
+    }
+    if(write(fd, buf, br) != br) {
+      close(fd);
+      f_close(&fp);
+      return -1;
+    }
+  }
+
+  // Clean up
+  close(fd);
+  f_close(&fp);
   return 0;
 }
 
@@ -38,10 +62,11 @@ uint64
 copy_all_files()
 {
   FATFS fs;
-  fs.pdrv = 1;
-  f_mount(&fs, "1:", 1);
   DIR dp;
   FILINFO fno;
+  mkdir("/sdcard");
+  fs.pdrv = 1;
+  f_mount(&fs, "1:", 1);
   f_opendir(&dp, "/");
   while(f_readdir(&dp, &fno)){
     if(fno.fattrib & AM_DIR)
@@ -89,6 +114,7 @@ char *tests[] = {
 int
 main(int argc, char *argv[])
 {
+  copy_all_files();
   int pid, wpid;
   char path[64];
   char *args[2];  // Array of pointers for exec arguments

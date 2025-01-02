@@ -909,7 +909,7 @@ sys_munmap(void)
 }
 
 uint64
-sys_virtio_disk_rw(void)
+sys_virtiodiskrw(void)
 {
   uint64 buf_addr;
   int write, dev, blockno;
