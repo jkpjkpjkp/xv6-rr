@@ -164,6 +164,16 @@ virtio_disk_init(int dev) // 0 for original disk, 1 for fatfs
 static int
 alloc_desc(int dev)
 {
+  // if(dev == 1) {
+  //   for(int i = 0; i < NUM; i++) {
+  //     printf("desc %d: free=%d addr=%lu len=%d flags=%d next=%d\n",
+  //            i, disk[dev].free[i], disk[dev].desc[i].addr,
+  //            disk[dev].desc[i].len, disk[dev].desc[i].flags,
+  //            disk[dev].desc[i].next);
+  //   }
+  //   while(1)
+  //     ;
+  // }
   for(int i = 0; i < NUM; i++){
     if(disk[dev].free[i]){
       disk[dev].free[i] = 0;
@@ -209,6 +219,7 @@ free_chain(int i, int dev)
 static int
 alloc3_desc(int *idx, int dev)
 {
+
   for(int i = 0; i < 3; i++){
     idx[i] = alloc_desc(dev);
     if(idx[i] < 0){
@@ -223,62 +234,63 @@ alloc3_desc(int *idx, int dev)
 void
 virtio_disk_rw(struct buf *b, int write, int dev)
 {
-  printf("[virtio_disk_rw] starting dev=%d blockno=%d write=%d\n", dev, b->blockno, write);
+  printf("[virtio_disk_rw] starting dev=%d blockno=%d write=%d\n",
+         dev, b->blockno, write);
+
+  // Check buffer pointer range or alignment if you suspect an invalid pointer.
+  // Replace KERNBASE/PHYSTOP with whatever region is valid for your system.
+  // #ifdef DEBUG
+  //   if ((uint64)b->data < KERNBASE || (uint64)b->data > PHYSTOP) {
+  //     printf("[virtio_disk_rw] WARNING: b->data out of valid range: 0x%lx\n",
+  //            (uint64)b->data);
+  //   }
+  // #endif
+
   uint64 sector = b->blockno * (BSIZE / 512);
 
   acquire(&disk[dev].vdisk_lock);
 
-  // the spec's Section 5.2 says that legacy block operations use
-  // three descriptors: one for type/reserved/sector, one for the
-  // data, one for a 1-byte status result.
-
-  // allocate the three descriptors.
   int idx[3];
 
-  while(1){
-    if(alloc3_desc(idx, dev) == 0) {
+  while (1) {
+    if (alloc3_desc(idx, dev) == 0) {
       break;
     }
     sleep(&disk[dev].free[0], &disk[dev].vdisk_lock);
   }
-printf("[virtio_disk_rw] sector=%lu, write=%d\n", sector, write);
-printf("[virtio_disk_rw] Descriptor indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
 
-  // format the three descriptors.
-  // qemu's virtio-blk.c reads them.
+  printf("[virtio_disk_rw] sector=%lu, write=%d\n", sector, write);
+  printf("[virtio_disk_rw] Descriptor indices allocated: %d, %d, %d\n",
+         idx[0], idx[1], idx[2]);
 
   struct virtio_blk_req *buf0 = &disk[dev].ops[idx[0]];
 
-  if(write)
+  if (write)
     buf0->type = VIRTIO_BLK_T_OUT; // write the disk
   else
-    buf0->type = VIRTIO_BLK_T_IN; // read the disk
+    buf0->type = VIRTIO_BLK_T_IN;  // read the disk
   buf0->reserved = 0;
   buf0->sector = sector;
 
-  // printf("[virtio_disk_rw] A\n");
   disk[dev].desc[idx[0]].addr = (uint64) buf0;
   disk[dev].desc[idx[0]].len = sizeof(struct virtio_blk_req);
   disk[dev].desc[idx[0]].flags = VRING_DESC_F_NEXT;
   disk[dev].desc[idx[0]].next = idx[1];
-  // printf("[virtio_disk_rw] B\n");
 
   disk[dev].desc[idx[1]].addr = (uint64) b->data;
   disk[dev].desc[idx[1]].len = BSIZE;
-  if(write)
+  if (write)
     disk[dev].desc[idx[1]].flags = 0; // device reads b->data
   else
     disk[dev].desc[idx[1]].flags = VRING_DESC_F_WRITE; // device writes b->data
   disk[dev].desc[idx[1]].flags |= VRING_DESC_F_NEXT;
   disk[dev].desc[idx[1]].next = idx[2];
-  // printf("[virtio_disk_rw] C\n");
 
   disk[dev].info[idx[0]].status = 0xff; // device writes 0 on success
   disk[dev].desc[idx[2]].addr = (uint64) &disk[dev].info[idx[0]].status;
   disk[dev].desc[idx[2]].len = 1;
   disk[dev].desc[idx[2]].flags = VRING_DESC_F_WRITE; // device writes the status
   disk[dev].desc[idx[2]].next = 0;
-  // printf("[virtio_disk_rw] D\n");
 
   // record struct buf for virtio_disk_intr().
   b->disk = 1;
@@ -288,76 +300,78 @@ printf("[virtio_disk_rw] Descriptor indices: %d, %d, %d\n", idx[0], idx[1], idx[
   disk[dev].avail->ring[disk[dev].avail->idx % NUM] = idx[0];
 
   __sync_synchronize();
-  // printf("[virtio_disk_rw] E\n");
 
   // tell the device another avail ring entry is available.
   disk[dev].avail->idx += 1; // not % NUM ...
 
   __sync_synchronize();
-  // printf("[virtio_disk_rw] F\n");
 
-  *R(VIRTIO_MMIO_QUEUE_NOTIFY, dev) = 0; // value is queue number
+  // Additional debug: print contents of the "avail" ring after updating.
+  printf("[virtio_disk_rw] avail->idx=%d\n", disk[dev].avail->idx);
 
-  // Wait for virtio_disk_intr() to say request has finished.
-  // printf("[virtio_disk_rw] no one\n");
-  while(b->disk == 1) {
-  // printf("[virtio_disk_rw] awake\n");
-  //   printf("[virtio_disk_rw] waiting for disk completion: disk=%d b->disk=%d\n", dev, b->disk);
+  *R(VIRTIO_MMIO_QUEUE_NOTIFY, dev) = 0; // queue number
+
+  // Wait for virtio_disk_intr() to finish
+  while (b->disk == 1) {
+    // If you really suspect concurrency/timing, you can print here.
+    // printf("[virtio_disk_rw] waiting for completion dev=%d blockno=%d\n", dev, b->blockno);
     sleep(b, &disk[dev].vdisk_lock);
   }
-  // printf("[virtio_disk_rw] no one done\n");
 
-  printf("[virtio_disk_rw] Debug info:\n");
+  // Thorough debug info after the request completes
+  printf("[virtio_disk_rw] Request completed, printing debug info:\n");
   printf("  Device: %d\n", dev);
   printf("  Block number: %d\n", b->blockno);
   printf("  Write operation: %d\n", write);
   printf("  Descriptor chain indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
-  printf("  Descriptor 0 addr: 0x%lx len: %d flags: 0x%x next: %d\n", 
+
+  printf("  Descriptor 0: addr=0x%lx len=%d flags=0x%x next=%d\n", 
          disk[dev].desc[idx[0]].addr,
          disk[dev].desc[idx[0]].len,
          disk[dev].desc[idx[0]].flags,
          disk[dev].desc[idx[0]].next);
-  printf("  Descriptor 1 addr: 0x%lx len: %d flags: 0x%x next: %d\n",
+
+  printf("  Descriptor 1: addr=0x%lx len=%d flags=0x%x next=%d\n",
          disk[dev].desc[idx[1]].addr, 
          disk[dev].desc[idx[1]].len,
          disk[dev].desc[idx[1]].flags,
          disk[dev].desc[idx[1]].next);
-  printf("  Descriptor 2 addr: 0x%lx len: %d flags: 0x%x next: %d\n",
+
+  printf("  Descriptor 2: addr=0x%lx len=%d flags=0x%x next=%d\n",
          disk[dev].desc[idx[2]].addr,
          disk[dev].desc[idx[2]].len, 
          disk[dev].desc[idx[2]].flags,
          disk[dev].desc[idx[2]].next);
-  printf("  Status: 0x%x\n", disk[dev].info[idx[0]].status);
-  printf("  Available idx: %d\n", disk[dev].avail->idx);
-  printf("  Used idx: %d\n", disk[dev].used_idx);
-  printf("  Buffer disk flag: %d\n", b->disk);
-  
-  // Print first few bytes of data buffer
-  printf("  Data buffer contents (first 16 bytes):\n  ");
-  for(int i = 0; i < 16; i++) {
+
+  printf("  Status byte: 0x%x\n", disk[dev].info[idx[0]].status);
+  printf("  Avail->idx: %d\n", disk[dev].avail->idx);
+  printf("  Used->idx: %d\n", disk[dev].used_idx);
+  printf("  b->disk flag (should be 0 now): %d\n", b->disk);
+
+  // Print first 16 bytes of data buffer
+  printf("  Data buffer (first 16 bytes): ");
+  for (int i = 0; i < 16; i++) {
     printf("%02x ", ((unsigned char*)b->data)[i]);
   }
   printf("\n");
+
   disk[dev].info[idx[0]].b = 0;
-  // printf("[virtio_disk_rw] free_chain\n");
   free_chain(idx[0], dev);
-  // printf("[virtio_disk_rw] release\n");
 
   release(&disk[dev].vdisk_lock);
-  // printf("[virtio_disk_rw] done\n");
 
-  // For reads, check if buffer is all zeros as a sanity check
-  if(!write) {
+  // Post-check for read requests: see if it's suspiciously empty
+  if (!write) {
     int all_zeros = 1;
-    char *data = (char*)b->data;
-    for(int i = 0; i < BSIZE; i++) {
-      if(data[i] != 0) {
+    unsigned char *data = (unsigned char*)b->data;
+    for (int i = 0; i < BSIZE; i++) {
+      if (data[i] != 0) {
         all_zeros = 0;
         break;
       }
     }
-    if(all_zeros) {
-      printf("[virtio_disk_rw] WARNING: read buffer is all zeros\n"); 
+    if (all_zeros) {
+      printf("[virtio_disk_rw] WARNING: read buffer is all zeros\n");
     }
   }
 }
@@ -365,38 +379,40 @@ printf("[virtio_disk_rw] Descriptor indices: %d, %d, %d\n", idx[0], idx[1], idx[
 void
 virtio_disk_intr(int dev)
 {
-  // printf("[virtio_disk_intr] starting dev=%d\n", dev);
   acquire(&disk[dev].vdisk_lock);
 
-  // the device won't raise another interrupt until we tell it
-  // we've seen this interrupt, which the following line does.
-  // this may race with the device writing new entries to
-  // the "used" ring, in which case we may process the new
-  // completion entries in this interrupt, and have nothing to do
-  // in the next interrupt, which is harmless.
-  *R(VIRTIO_MMIO_INTERRUPT_ACK, dev) = *R(VIRTIO_MMIO_INTERRUPT_STATUS, dev) & 0x3;
+  // Acknowledge interrupt
+  uint32 status_reg = *R(VIRTIO_MMIO_INTERRUPT_STATUS, dev);
+  *R(VIRTIO_MMIO_INTERRUPT_ACK, dev) = status_reg & 0x3;
 
   __sync_synchronize();
 
-  // the device increments disk[dev].used->idx when it
-  // adds an entry to the used ring.
+  // Debug: Show current used->idx vs device used->idx
+  // The device increments used->idx in the "used" ring once it is done.
+  printf("[virtio_disk_intr] dev=%d status_reg=0x%x used_idx(local)=%d used->idx(device)=%d\n",
+         dev, status_reg, disk[dev].used_idx, disk[dev].used->idx);
 
-  while(disk[dev].used_idx != disk[dev].used->idx){
+  while (disk[dev].used_idx != disk[dev].used->idx) {
     __sync_synchronize();
     int id = disk[dev].used->ring[disk[dev].used_idx % NUM].id;
 
-    if(disk[dev].info[id].status != 0)
+    // If device wrote non-zero status, log it
+    if (disk[dev].info[id].status != 0) {
+      printf("[virtio_disk_intr] ERROR: status for id %d = 0x%x\n",
+             id, disk[dev].info[id].status);
       panic("virtio_disk_intr status");
+    }
 
     struct buf *b = disk[dev].info[id].b;
-  // printf("[virtio_disk_intr] S\n");
-    b->disk = 0;   // disk is done with buf
-  // printf("[virtio_disk_intr] P\n");
+    b->disk = 0; // disk is done with buf
     wakeup(b);
 
     disk[dev].used_idx += 1;
+
+    // Additional debug
+    printf("[virtio_disk_intr] Completed descriptor id=%d, next used_idx=%d\n",
+           id, disk[dev].used_idx);
   }
 
   release(&disk[dev].vdisk_lock);
-  // printf("[virtio_disk_intr] returning\n");
 }
