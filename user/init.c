@@ -114,6 +114,7 @@ char *tests[] = {
 int
 main(int argc, char *argv[])
 {
+  printf("[user/init.c:main] starting\n");
   copy_all_files();
   int pid, wpid;
   char path[64];
