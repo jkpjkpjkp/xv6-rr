@@ -624,6 +624,9 @@ static WORD ld_word (const BYTE* ptr)	/*	 Load a 2-byte little-endian word */
 
 	rv = ptr[1];
 	rv = rv << 8 | ptr[0];
+	printf("ld_word: Loading 2-byte word from %p\n", ptr);
+	printf("ld_word: bytes [%02x %02x]\n", ptr[0], ptr[1]); 
+	printf("ld_word: returning value 0x%04x\n", rv);
 	return rv;
 }
 
@@ -3570,6 +3573,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	printf("[mount_volume] FF_FS_FAT\n");
 		if (ld_word(fs->win + BPB_BytsPerSec) != SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_BytsPerSec must be equal to the physical sector size) */
 
+	printf("[mount_volume] not 13\n");
 		fasize = ld_word(fs->win + BPB_FATSz16);		/* Number of sectors per FAT */
 		if (fasize == 0) fasize = ld_dword(fs->win + BPB_FATSz32);
 		fs->fsize = fasize;
@@ -3578,6 +3582,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (fs->n_fats != 1 && fs->n_fats != 2) return FR_NO_FILESYSTEM;	/* (Must be 1 or 2) */
 		fasize *= fs->n_fats;							/* Number of sectors for FAT area */
 
+	printf("[mount_volume] B\n");
 		fs->csize = fs->win[BPB_SecPerClus];			/* Cluster size */
 		if (fs->csize == 0 || (fs->csize & (fs->csize - 1))) return FR_NO_FILESYSTEM;	/* (Must be power of 2) */
 
@@ -3587,6 +3592,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		tsect = ld_word(fs->win + BPB_TotSec16);		/* Number of sectors on the volume */
 		if (tsect == 0) tsect = ld_dword(fs->win + BPB_TotSec32);
 
+	printf("[mount_volume] D\n");
 		nrsv = ld_word(fs->win + BPB_RsvdSecCnt);		/* Number of reserved sectors */
 		if (nrsv == 0) return FR_NO_FILESYSTEM;			/* (Must not be 0) */
 
@@ -3597,26 +3603,42 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 		if (nclst == 0) return FR_NO_FILESYSTEM;		/* (Invalid volume size) */
 		fmt = 0;
 		if (nclst <= MAX_FAT32) fmt = FS_FAT32;
-		if (nclst <= MAX_FAT16) fmt = FS_FAT16;
-		if (nclst <= MAX_FAT12) fmt = FS_FAT12;
+		printf("[mount_volume] nclst: %u\n", nclst);
+		printf("[mount_volume] MAX_FAT32: %u\n", MAX_FAT32);
+		printf("[mount_volume] MAX_FAT16: %u\n", MAX_FAT16); 
+		printf("[mount_volume] MAX_FAT12: %u\n", MAX_FAT12);
+		printf("[mount_volume] Current fmt: %d\n", fmt);
+		// if (nclst <= MAX_FAT16) fmt = FS_FAT16;
+		// if (nclst <= MAX_FAT12) fmt = FS_FAT12;
 		if (fmt == 0) return FR_NO_FILESYSTEM;
 
+	printf("[mount_volume] E\n");
 		/* Boundaries and Limits */
 		fs->n_fatent = nclst + 2;						/* Number of FAT entries */
 		fs->volbase = bsect;							/* Volume start sector */
 		fs->fatbase = bsect + nrsv; 					/* FAT start sector */
-		fs->database = bsect + sysect;					/* Data start sector */
+		fs->database = bsect + sysect;
+	printf("[mount_volume] K\n");					/* Data start sector */
 		if (fmt == FS_FAT32) {
 			if (ld_word(fs->win + BPB_FSVer32) != 0) return FR_NO_FILESYSTEM;	/* (Must be FAT32 revision 0.0) */
+			
+	printf("[mount_volume] M\n");		
 			if (fs->n_rootdir != 0) return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must be 0) */
 			fs->dirbase = ld_dword(fs->win + BPB_RootClus32);	/* Root directory start cluster */
 			szbfat = fs->n_fatent * 4;					/* (Needed FAT size) */
 		} else {
+			printf("[mount_volume] N\n");
+			printf("[mount_volume] fs->n_rootdir: %u\n", fs->n_rootdir);
+			printf("[mount_volume] fs->fatbase: %u\n", fs->fatbase);
+			printf("[mount_volume] fasize: %u\n", fasize);
 			if (fs->n_rootdir == 0)	return FR_NO_FILESYSTEM;	/* (BPB_RootEntCnt must not be 0) */
+			
+	printf("[mount_volume] PHI\n");		
 			fs->dirbase = fs->fatbase + fasize;			/* Root directory start sector */
 			szbfat = (fmt == FS_FAT16) ?				/* (Needed FAT size) */
 				fs->n_fatent * 2 : fs->n_fatent * 3 / 2 + (fs->n_fatent & 1);
 		}
+	printf("[mount_volume] F\n");
 		if (fs->fsize < (szbfat + (SS(fs) - 1)) / SS(fs)) return FR_NO_FILESYSTEM;	/* (BPB_FATSz must not be less than the size needed) */
 
 #if !FF_FS_READONLY
