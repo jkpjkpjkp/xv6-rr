@@ -826,14 +826,17 @@ sys_getdents64(void)
 uint64
 sys_exec(void)
 {
+  printf("[kernel/sysfile.c:sys_exec] starting\n");
   char path[MAXPATH], *argv[MAXARG];
   int i;
   uint64 uargv, uarg;
 
   argaddr(1, &uargv);
+  printf("[kernel/sysfile.c:sys_exec] why\n");
   if(argstr(0, path, MAXPATH) < 0) {
     return -1;
   }
+  printf("[kernel/sysfile.c:sys_exec] args\n");
   memset(argv, 0, sizeof(argv));
   for(i=0;; i++){
     if(i >= NELEM(argv)){
@@ -853,6 +856,7 @@ sys_exec(void)
       goto bad;
   }
 
+  printf("[kernel/sysfile.c:sys_exec] exec\n");
   int ret = exec(path, argv);
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)

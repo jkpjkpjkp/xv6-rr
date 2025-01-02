@@ -130,6 +130,9 @@ main(int argc, char *argv[])
 
   printf("Maximum file size supported: %lu bytes\n", MAXFILE * BSIZE);
 
+  printf("\nAdding files to filesystem:\n");
+  printf("------------------------\n");
+
   for(i = 2; i < argc; i++){
     // get rid of "user/"
     char *shortname;
@@ -144,14 +147,10 @@ main(int argc, char *argv[])
     if (stat(argv[i], &st) < 0)
       die(argv[i]);
     
-    printf("File %s size: %ld bytes", argv[i], st.st_size);
-    if (st.st_size > MAXFILE * BSIZE) {
-      printf(" (TOO LARGE!)\n");
-      fprintf(stderr, "Error: %s is too large (%ld bytes). Maximum size is %lu bytes\n", 
-              argv[i], st.st_size, MAXFILE * BSIZE);
-      exit(1);
-    }
-    printf("\n");
+    printf("Adding %s (as /%s), size: %ld bytes\n", 
+           argv[i], 
+           shortname[0] == '_' ? shortname + 1 : shortname,  // Show final name
+           st.st_size);
 
     assert(index(shortname, '/') == 0);
 

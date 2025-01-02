@@ -22,6 +22,12 @@ int flags2perm(int flags)
 int
 exec(char *path, char **argv)
 {
+  printf("[kernel/exec.c:exec] path=%s\n", path);
+  if(argv){
+    printf("[kernel/exec.c:exec] argv[0]=%s\n", argv[0]);
+  } else {
+    printf("[kernel/exec.c:exec] argv=null\n"); 
+  }
   char *s, *last;
   int i, off;
   uint64 argc, sz = 0, sp, ustack[MAXARG], stackbase;

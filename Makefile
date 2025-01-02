@@ -140,7 +140,6 @@ UPROGS=\
 	$U/_mkdir\
 	$U/_rm\
 	$U/_sh\
-	$U/_usertests\
 	$U/_grind\
 	$U/_zombie\
 

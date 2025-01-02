@@ -1,10 +1,6 @@
 # Initial process that execs /init.
 # This code runs in user space.
 
-
-
-
-
 .globl start
 start:
 
@@ -21,11 +17,13 @@ exit:
         jal exit
 
 # char init[] = "/init\0";
+.p2align 2
 init:
-  .string "/init\0"
+        .string "/init\0"
+        .zero 2          # Add padding bytes to ensure enough space for alignment
 
 # char *argv[] = { init, 0 };
-.p2align 2
+.p2align 3
 argv:
-  .quad init
-  .quad 0
+        .quad init
+        .quad 0

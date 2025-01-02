@@ -243,8 +243,7 @@ userinit(int t)
   struct proc *p;
 
   p = allocproc();
-  if(t == 0)
-    initproc = p;
+  initproc = p;
   
   // allocate one user page and copy initcode's instructions
   // and data into it.

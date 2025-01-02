@@ -25,8 +25,10 @@ int
 fetchstr(uint64 addr, char *buf, int max)
 {
   struct proc *p = myproc();
+  printf("[fetchstr] A\n");
   if(copyinstr(p->pagetable, buf, addr, max) < 0)
     return -1;
+  printf("[fetchstr] B\n");
   return strlen(buf);
 }
 
@@ -74,8 +76,10 @@ argaddr(int n, uint64 *ip)
 int
 argstr(int n, char *buf, int max)
 {
+  printf("[kernel/syscall.c:argstr] n=%d max=%d\n", n, max);
   uint64 addr;
   argaddr(n, &addr);
+  printf("[kernel/syscall.c:argstr] addr=0x%lx\n", addr);
   return fetchstr(addr, buf, max);
 }
 
@@ -163,10 +167,12 @@ static uint64 (*syscalls[])(void) = {
 void
 syscall(void)
 {
+  printf("[kernel/syscall.c:syscall] starting\n");
   int num;
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
+  printf("[kernel/syscall.c:syscall] syscall number=%d\n", num);
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
