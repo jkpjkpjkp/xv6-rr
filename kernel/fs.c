@@ -294,8 +294,8 @@ ilock(struct inode *ip)
   if(ip == 0)
     panic("ilock: null ip");
 
-  printf("[ilock] starting ip=%p ref=%d dev=%d inum=%d\n", 
-         ip, ip->ref, ip->dev, ip->inum);
+  // printf("[ilock] starting ip=%p ref=%d dev=%d inum=%d\n", 
+  //        ip, ip->ref, ip->dev, ip->inum);
   
   struct buf *bp;
   struct dinode *dip;
@@ -303,7 +303,7 @@ ilock(struct inode *ip)
   if(ip->ref < 1)
     panic("ilock: no refs");
 
-  printf("[ilock] mid\n");
+  // printf("[ilock] mid\n");
 
   // Add check for lock initialization
   if(ip->lock.locked == 0xDEADBEEF)
@@ -326,7 +326,7 @@ ilock(struct inode *ip)
     if(ip->type == 0)
       panic("ilock: no type");
   }
-  printf("[ilock] done\n");
+  // printf("[ilock] done\n");
 }
 
 // Unlock the given inode.

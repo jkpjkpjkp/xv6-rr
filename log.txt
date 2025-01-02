@@ -1,0 +1,427 @@
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 3 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -drive file=sdcard.img,if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 -d guest_errors,in_asm -D qemu.log
+
+xv6 kernel is booting
+
+[namex] starting
+[namex] return normally
+hart 1 starting
+hart 2 starting
+[kernel/sysfile.c:sys_exec] starting
+[kernel/sysfile.c:sys_exec] why
+[kernel/syscall.c:argstr] n=0 max=128
+[kernel/syscall.c:argstr] addr=0x24
+[fetchstr] A
+[kernel/vm.c:copyinstr] starting
+[kernel/vm.c:copyinstr] dst=0x0000003fffffdf00 srcva=36 max=128
+[copyinstr] A
+[copyinstr] B
+[kernel/vm.c:copyinstr] got_null=1 max=123
+[kernel/vm.c:copyinstr] dst=0x0000003fffffdf05 srcva=4096
+[fetchstr] B
+[kernel/sysfile.c:sys_exec] args
+[fetchstr] A
+[kernel/vm.c:copyinstr] starting
+[kernel/vm.c:copyinstr] dst=0x0000000087f4c000 srcva=36 max=4096
+[copyinstr] A
+[copyinstr] B
+[kernel/vm.c:copyinstr] got_null=1 max=4091
+[kernel/vm.c:copyinstr] dst=0x0000000087f4c005 srcva=4096
+[fetchstr] B
+[kernel/sysfile.c:sys_exec] exec
+[kernel/exec.c:exec] path=/init
+[kernel/exec.c:exec] argv[0]=/init
+[namex] starting
+[namex] skipelem
+[ilock] ip invalid
+[namex] locked
+[namex] mid while
+[namex] unlocking
+[namex] return normally
+[ilock] ip invalid
+sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000000000000
+[kernel/syscall.c:argstr] n=0 max=128
+[kernel/syscall.c:argstr] addr=0x3660
+[fetchstr] A
+[kernel/vm.c:copyinstr] starting
+[kernel/vm.c:copyinstr] dst=0x0000003fffffdf10 srcva=13920 max=128
+[copyinstr] A
+[copyinstr] B
+[kernel/vm.c:copyinstr] got_null=1 max=121
+[kernel/vm.c:copyinstr] dst=0x0000003fffffdf17 srcva=16384
+[fetchstr] B
+[namex] starting
+[namex] skipelem
+[namex] locked
+[namex] mid while
+[namex] unlocking
+[namex] return normally
+[ilock] ip invalid
+argfd: n=0 fd=0
+argfd: proc pid=1 name=init
+argfd: ofile[0]=0x0000000080021830
+argfd: n=0 fd=0
+argfd: proc pid=1 name=init
+argfd: ofile[0]=0x0000000080021830
+sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+Direct write testsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+[sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+usys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ssys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+esys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+rsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+/sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+nsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+.sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+csys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+:sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+msys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+asys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+nsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+]sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ssys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+asys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+rsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+nsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+gsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+
+sys_write called
+sys_write here
+argfd: n=0 fd=2
+argfd: proc pid=1 name=init
+argfd: ofile[2]=0x0000000080021830
+sys_write ok
+stderr test
+sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+Fsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+osys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+rsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+csys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+esys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+dsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ssys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+dsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+osys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+usys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+:sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+nsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ sys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+ssys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+asys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+rsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+tsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+isys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+nsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+gsys_write called
+sys_write here
+argfd: n=0 fd=1
+argfd: proc pid=1 name=init
+argfd: ofile[1]=0x0000000080021830
+sys_write ok
+
+QEMU: Terminated
+

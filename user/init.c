@@ -114,7 +114,22 @@ char *tests[] = {
 int
 main(int argc, char *argv[])
 {
+  if(open("console", O_RDWR) < 0){
+    mknod("console", CONSOLE, 0);
+    open("console", O_RDWR);
+  }
+  dup(0);  // stdout
+  dup(0);  // stderr
+  write(1, "Direct write test\n", 17);  // Try direct write to fd 1 (stdout)
   printf("[user/init.c:main] starting\n");
+  write(2, "stderr test\n", 12);        // Try writing to stderr
+  
+  // Force flush of stdout
+  fprintf(1, "Forced stdout: init starting\n");
+  
+  while(1)
+    ;
+  return 0;
   copy_all_files();
   int pid, wpid;
   char path[64];

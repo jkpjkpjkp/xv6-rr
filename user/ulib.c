@@ -8,6 +8,7 @@
 void
 start()
 {
+  write(1, "start() called\n", 14);
   extern int main();
   main();
   exit(0);
