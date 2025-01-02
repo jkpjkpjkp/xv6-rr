@@ -389,8 +389,8 @@ virtio_disk_intr(int dev)
 
   // Debug: Show current used->idx vs device used->idx
   // The device increments used->idx in the "used" ring once it is done.
-  printf("[virtio_disk_intr] dev=%d status_reg=0x%x used_idx(local)=%d used->idx(device)=%d\n",
-         dev, status_reg, disk[dev].used_idx, disk[dev].used->idx);
+  // printf("[virtio_disk_intr] dev=%d status_reg=0x%x used_idx(local)=%d used->idx(device)=%d\n",
+        //  dev, status_reg, disk[dev].used_idx, disk[dev].used->idx);
 
   while (disk[dev].used_idx != disk[dev].used->idx) {
     __sync_synchronize();
@@ -398,8 +398,8 @@ virtio_disk_intr(int dev)
 
     // If device wrote non-zero status, log it
     if (disk[dev].info[id].status != 0) {
-      printf("[virtio_disk_intr] ERROR: status for id %d = 0x%x\n",
-             id, disk[dev].info[id].status);
+      // printf("[virtio_disk_intr] ERROR: status for id %d = 0x%x\n",
+            //  id, disk[dev].info[id].status);
       panic("virtio_disk_intr status");
     }
 
@@ -410,8 +410,8 @@ virtio_disk_intr(int dev)
     disk[dev].used_idx += 1;
 
     // Additional debug
-    printf("[virtio_disk_intr] Completed descriptor id=%d, next used_idx=%d\n",
-           id, disk[dev].used_idx);
+    // printf("[virtio_disk_intr] Completed descriptor id=%d, next used_idx=%d\n",
+    //        id, disk[dev].used_idx);
   }
 
   release(&disk[dev].vdisk_lock);

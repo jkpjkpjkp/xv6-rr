@@ -12,6 +12,9 @@
 uint64
 copy_file_from_fat32(char *filename)
 {
+  if (filename[0] < 'a' || filename[0] > 'z') {
+    return -1;
+  }
   printf("[copy_file_from_fat32] %s\n", filename);
   FIL fp;
   char path[MAXPATH], buf[BSIZE];
@@ -91,6 +94,18 @@ copy_all_files()
   while(f_readdir(&dp, &fno) == FR_OK){
 
     printf("[user/init.c:copy_all_files] 1\n");
+    printf("[user/init.c:copy_all_files] File found: %s\n", fno.fname);
+    printf("[user/init.c:copy_all_files] Attributes: 0x%02x (%s%s%s%s%s)\n", 
+           fno.fattrib,
+           (fno.fattrib & AM_DIR) ? "Directory " : "",
+           (fno.fattrib & AM_RDO) ? "Read-only " : "",
+           (fno.fattrib & AM_HID) ? "Hidden " : "",
+           (fno.fattrib & AM_SYS) ? "System " : "",
+           (fno.fattrib & AM_ARC) ? "Archive " : "");
+    printf("[user/init.c:copy_all_files] Size: %lu bytes\n", fno.fsize);
+    printf("[user/init.c:copy_all_files] Modified: %u/%02u/%02u %02u:%02u:%02u\n",
+           (fno.fdate >> 9) + 1980, (fno.fdate >> 5) & 15, fno.fdate & 31,
+           fno.ftime >> 11, (fno.ftime >> 5) & 63, (fno.ftime & 31) * 2);
     if(fno.fattrib & AM_DIR)
       continue;
     if(*fno.fname != '\0')

@@ -624,9 +624,9 @@ static WORD ld_word (const BYTE* ptr)	/*	 Load a 2-byte little-endian word */
 
 	rv = ptr[1];
 	rv = rv << 8 | ptr[0];
-	printf("ld_word: Loading 2-byte word from %p\n", ptr);
-	printf("ld_word: bytes [%02x %02x]\n", ptr[0], ptr[1]); 
-	printf("ld_word: returning value 0x%04x\n", rv);
+	// printf("ld_word: Loading 2-byte word from %p\n", ptr);
+	// printf("ld_word: bytes [%02x %02x]\n", ptr[0], ptr[1]); 
+	// printf("ld_word: returning value 0x%04x\n", rv);
 	return rv;
 }
 
@@ -4835,7 +4835,7 @@ FRESULT f_readdir (
 			FREE_NAMBUF();
 		}
 	}
-	printf("[f_readdir] done");
+	printf("[f_readdir] done\n");
 	LEAVE_FF(fs, res);
 }
 
