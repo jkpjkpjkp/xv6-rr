@@ -929,39 +929,25 @@ sys_virtiodiskrw(void)
   uint64 buf_addr;
   int write, dev, blockno;
   struct buf *b;
-
   
   argaddr(0, &buf_addr);
   argint(1, &write);
   argint(2, &dev);
   argint(3, &blockno);
-  printf("[sys_virtiodiskrw] bget\n");
-  b = bget(1, blockno);
-  printf("[sys_virtiodiskrw] buf addr: %p\n", b);
-
-  // printf("[sys_virtiodiskrw] initsleeplock\n");
-  initsleeplock(&b->lock, "virtio_disk_rw buf");
-  b->valid = 0;
-  b->disk = 0;
-  b->dev = dev;
-  b->blockno = blockno;
-  b->refcnt = 0;
-  b->prev = b->next = 0;
-  if(b->data == 0)
-    return -1;
-
-  // printf("[sys_virtiodiskrw] copyin\n");
-  if(copyin(myproc()->pagetable, (char*)b->data, buf_addr, BSIZE) < 0)
-    return -1;
-
-  // printf("[sys_virtiodiskrw] virtio_disk_rw\n");
-  virtio_disk_rw(b, write, dev);
-  // printf("[sys_virtiodiskrw] done\n");
-
-  if(!write) {
-    if(copyout(myproc()->pagetable, buf_addr, (char*)b->data, BSIZE) < 0)
+  
+  b = bread(dev, blockno);
+  if(!write){
+    if(copyout(myproc()->pagetable, buf_addr, (char*)b->data, BSIZE) < 0){
+      brelse(b);
       return -1;
+    }
+  } else{
+    if(copyin(myproc()->pagetable, (char*)b->data, buf_addr, BSIZE) < 0){
+      brelse(b);
+      return -1;
+    }
+    bwrite(b);
   }
-
+  brelse(b);
   return 0;
 }

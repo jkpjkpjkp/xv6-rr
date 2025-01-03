@@ -16,7 +16,6 @@ void            brelse(struct buf*);
 void            bwrite(struct buf*);
 void            bpin(struct buf*);
 void            bunpin(struct buf*);
-struct buf*     bget(uint dev, uint blockno);
 
 // console.c
 void            consoleinit(void);

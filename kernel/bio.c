@@ -66,6 +66,8 @@ bget(uint dev, uint blockno)
   printf("[bget] A\n");
   // Is the block already cached?
   for(b = bcache.head.next; b != &bcache.head; b = b->next){
+    printf("[bget] buf addr=%p\n", b);
+    printf("[bget] checking buf dev=%d blockno=%d refcnt=%d\n", b->dev, b->blockno, b->refcnt);
     if(b->dev == dev && b->blockno == blockno){
       b->refcnt++;
       release(&bcache.lock);
@@ -98,7 +100,7 @@ bread(uint dev, uint blockno)
 
   b = bget(dev, blockno);
   if(!b->valid) {
-    virtio_disk_rw(b, 0, 0);
+    virtio_disk_rw(b, 0, dev);
     b->valid = 1;
   }
   return b;
@@ -110,7 +112,7 @@ bwrite(struct buf *b)
 {
   if(!holdingsleep(&b->lock))
     panic("bwrite");
-  virtio_disk_rw(b, 1, 0);
+  virtio_disk_rw(b, 1, b->dev);
 }
 
 // Release a locked buffer.
