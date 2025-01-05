@@ -126,8 +126,6 @@ copy_all_files()
     //     ;
     // }
   }
-  while(1)
-    ;
   return 0;
 }
 
