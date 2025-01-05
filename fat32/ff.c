@@ -4034,12 +4034,42 @@ FRESULT f_read (
 
 	*br = 0;	/* Clear read byte counter */
 	res = validate(&fp->obj, &fs);				/* Check validity of the file object */
+	printf("[f_read] SS\n");
+	// printf("f_read: fp=%p buff=%p btr=%u br=%p\n", fp, buff, btr, br);
+	// printf("f_read: fs=%p clst=%u sect=%u remain=%u rcnt=%u cc=%u csect=%u\n", fs, clst, sect, remain, rcnt, cc, csect);
+	// printf("f_read: rbuff=%p fp->fptr=%u fp->flag=0x%x fp->err=%d\n", rbuff, fp->fptr, fp->flag, fp->err);
+	// printf("f_read: fp->obj.fs=%p fp->obj.id=%d fp->obj.attr=%u fp->obj.stat=%u\n", fp->obj.fs, fp->obj.id, fp->obj.attr, fp->obj.stat);
+	// printf("f_read: fp->obj.sclust=%u fp->obj.objsize=%u\n", fp->obj.sclust, fp->obj.objsize);
 	if (res != FR_OK || (res = (FRESULT)fp->err) != FR_OK) LEAVE_FF(fs, res);	/* Check validity */
 	if (!(fp->flag & FA_READ)) LEAVE_FF(fs, FR_DENIED); /* Check access mode */
 	remain = fp->obj.objsize - fp->fptr;
 	if (btr > remain) btr = (UINT)remain;		/* Truncate btr by remaining bytes */
-
+	printf("[f_read] A\n");
+	printf("[f_read] btr=%u\n", btr);
+	printf("[f_read] remain=%llu\n", (unsigned long long)remain);
+	printf("[f_read] fp->fptr=%llu\n", (unsigned long long)fp->fptr);
+	printf("[f_read] fp->obj.objsize=%llu\n", (unsigned long long)fp->obj.objsize);
+	printf("[f_read] fp->clust=%u\n", fp->clust);
+	printf("[f_read] fp->sect=%u\n", fp->sect);
+	printf("[f_read] fp->flag=0x%x\n", fp->flag);
+	printf("[f_read] fp->err=%d\n", fp->err);
+	printf("[f_read] fs->fs_type=%d\n", fs->fs_type);
+	printf("[f_read] fs->csize=%u\n", fs->csize);
+	printf("[f_read] fs->n_fats=%d\n", fs->n_fats);
+	printf("[f_read] fs->wflag=%d\n", fs->wflag);
+	printf("[f_read] fs->fsi_flag=%d\n", fs->fsi_flag);
+	printf("[f_read] fs->id=%d\n", fs->id);
+	printf("[f_read] fs->n_rootdir=%d\n", fs->n_rootdir);
+	printf("[f_read] fs->last_clst=%u\n", fs->last_clst);
+	printf("[f_read] fs->free_clst=%u\n", fs->free_clst);
+	printf("[f_read] fs->volbase=%u\n", fs->volbase);
+	printf("[f_read] fs->fatbase=%u\n", fs->fatbase);
+	printf("[f_read] fs->dirbase=%u\n", fs->dirbase);
+	printf("[f_read] fs->database=%u\n", fs->database);
+	printf("[f_read] fs->winsect=%u\n", fs->winsect);
 	for ( ; btr > 0; btr -= rcnt, *br += rcnt, rbuff += rcnt, fp->fptr += rcnt) {	/* Repeat until btr bytes read */
+		printf("[f_read] Loop: btr=%u *br=%u fp->fptr=%llu\n", btr, *br, (unsigned long long)fp->fptr);
+		printf("[f_read] rbuff=%p\n", rbuff);
 		if (fp->fptr % SS(fs) == 0) {			/* On the sector boundary? */
 			csect = (UINT)(fp->fptr / SS(fs) & (fs->csize - 1));	/* Sector offset in the cluster */
 			if (csect == 0) {					/* On the cluster boundary? */
@@ -4104,7 +4134,7 @@ FRESULT f_read (
 		memcpy(rbuff, fp->buf + fp->fptr % SS(fs), rcnt);	/* Extract partial sector */
 #endif
 	}
-
+printf("[f_read] done\n");
 	LEAVE_FF(fs, FR_OK);
 }
 

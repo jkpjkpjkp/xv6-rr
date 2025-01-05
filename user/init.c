@@ -9,12 +9,14 @@
 #include "kernel/param.h"
 #include "fat32/ff.h"
 
+char *buf[BSIZE];
+
 uint64
 copy_file_from_fat32(char *filename)
 {
   printf("[copy_file_from_fat32] %s\n", filename);
   FIL fp;
-  char path[MAXPATH], buf[BSIZE];
+  char path[MAXPATH];
   FSIZE_t sz;
   UINT br;
   int fd;
@@ -40,24 +42,46 @@ copy_file_from_fat32(char *filename)
 
   // Get file size
   sz = f_size(&fp);
+  printf("[user/init.c:copy_file_from_fat32] file size is %d\n", sz);
 
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.fs=0x%p\n", fp.obj.fs);
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.id=%d\n", fp.obj.id);
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.attr=%d\n", fp.obj.attr);
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.stat=%d\n", fp.obj.stat);
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.sclust=%u\n", fp.obj.sclust);
+  printf("[user/init.c:copy_file_from_fat32] fp.obj.objsize=%llu\n", (unsigned long long)fp.obj.objsize);
+  printf("[user/init.c:copy_file_from_fat32] fp.flag=0x%x\n", fp.flag);
+  printf("[user/init.c:copy_file_from_fat32] fp.err=%d\n", fp.err);
+  printf("[user/init.c:copy_file_from_fat32] fp.fptr=%llu\n", (unsigned long long)fp.fptr);
+  printf("[user/init.c:copy_file_from_fat32] fp.clust=%u\n", fp.clust);
+  printf("[user/init.c:copy_file_from_fat32] fp.sect=%u\n", fp.sect);
+
+  printf("[user/init.c:copy_file_from_fat32] buf addr=0x%p\n", buf);
+  printf("[user/init.c:copy_file_from_fat32] buf size=%lu\n", sizeof(buf));
+  buf[0] = '\0'; // verify addr validity. 
   // Copy data
   for(int i = 0; i < sz; i += BSIZE) {
     if(f_read(&fp, buf, BSIZE, &br) != FR_OK) {
       close(fd);
       f_close(&fp);
+    printf("[user/init.c:copy_file_from_fat32] f_read return\n");
       return -1;
     }
+    printf("[user/init.c:copy_file_from_fat32] f_read\n");
     if(write(fd, buf, br) != br) {
       close(fd);
       f_close(&fp);
+    printf("[user/init.c:copy_file_from_fat32] write return\n");
       return -1;
     }
+    printf("[user/init.c:copy_file_from_fat32] write\n");
   }
 
   // Clean up
   close(fd);
   f_close(&fp);
+
+  printf("[user/init.c:copy_file_from_fat32] done\n");
   return 0;
 }
 
@@ -116,7 +140,7 @@ copy_all_files()
     copy_file_from_fat32(fno.fname);
     printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
 
-    break; // TODO!!!!! remove!!!! 
+    break; // TODO!!!!! remove this break!!!! 
     // while(1)
     //   ;
     // if ('a' <= *fno.fname && *fno.fname <= 'z') {
@@ -126,6 +150,7 @@ copy_all_files()
     //     ;
     // }
   }
+  printf("[user/init.c:copy_all_files] done");
   return 0;
 }
 
