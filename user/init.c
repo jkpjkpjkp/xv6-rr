@@ -105,15 +105,26 @@ copy_all_files()
     printf("[user/init.c:copy_all_files] Modified: %u/%02u/%02u %02u:%02u:%02u\n",
            (fno.fdate >> 9) + 1980, (fno.fdate >> 5) & 15, fno.fdate & 31,
            fno.ftime >> 11, (fno.ftime >> 5) & 63, (fno.ftime & 31) * 2);
-    if(fno.fattrib & AM_DIR)
+    if(fno.fattrib & AM_DIR){
       continue;
 
-    if ('a' <= *fno.fname && *fno.fname <= 'z') {
-      copy_file_from_fat32(fno.fname);
-      printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
-      while(1)
-        ;
     }
+
+     char *p;
+     for(p = fno.fname; *p; p++){
+       if('A' <= *p && *p <= 'Z')
+         *p = *p - 'A' + 'a';
+     }
+    copy_file_from_fat32(fno.fname);
+    printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
+    // while(1)
+    //   ;
+    // if ('a' <= *fno.fname && *fno.fname <= 'z') {
+    //   copy_file_from_fat32(fno.fname);
+    //   printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
+    //   while(1)
+    //     ;
+    // }
   }
   while(1)
     ;
@@ -178,12 +189,14 @@ main(int argc, char *argv[])
   // return 0;
   printf("[user/init.c:main] copy_all_files\n");
   copy_all_files();
+  printf("[user/init.c:main] copied_all_files\n");
+
   int pid, wpid;
   char path[64];
   char *args[2];  // Array of pointers for exec arguments
 
   for(char **test = tests; *test; test++) {
-    printf("Testing %s:\n", *test);
+    printf("[user/init.c:main] Testing %s:\n", *test);
     
     // Use safer string copy
     memmove(path, "/sdcard/\0", 9);
@@ -191,21 +204,23 @@ main(int argc, char *argv[])
 
     pid = fork();
     if(pid < 0) {
-      printf("runall: fork failed\n");
+      printf("[user/init.c:main] runall: fork failed\n");
       exit(1);
     }
     if(pid == 0) {
       args[0] = path;    // First argument is program name
       args[1] = 0;       // Null terminate the array
       exec(path, args);  // Pass array of pointers
-      printf("runall: exec %s failed\n", path);
+      printf("[user/init.c:main] runall: exec %s failed\n", path);
       exit(1);
     }
 
+    printf("[user/init.c:main] waiting\n");
     // Parent waits
     while((wpid = wait(0)) >= 0 && wpid != pid) {
       // Wait for the specific child
     }
+    printf("[user/init.c:main] done waiting\n");
   }
   shutdown();
 }
