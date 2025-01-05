@@ -3454,6 +3454,8 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	*rfs = 0;
 	printf("[mount_volume] get_ldnumber\n");
 	vol = get_ldnumber(path);
+	if (vol == 0)
+		vol = 1; //// TODO!!!! we just hid things under the rug. 
 	printf("[mount_volume] get_ldnumber %d\n", vol);
 	if (vol < 0) return FR_INVALID_DRIVE;
 
@@ -3767,7 +3769,7 @@ FRESULT f_mount (
 	if (vol < 0) return FR_INVALID_DRIVE;
 	cfs = FatFs[vol];			/* Pointer to the filesystem object of the volume */
 
-	printf("[f_mount] mid\n");
+	printf("[f_mount] mid %llu %llu\n", (long long int)cfs, (long long int)fs);
 	if (cfs) {					/* Unregister current filesystem object if registered */
 		FatFs[vol] = 0;
 #if FF_FS_LOCK
@@ -3778,7 +3780,11 @@ FRESULT f_mount (
 #endif
 		cfs->fs_type = 0;		/* Invalidate the filesystem object to be unregistered */
 	}
-
+	printf("[f_mount] fs=%p\n", fs);
+	printf("[f_mount] cfs=%p\n", cfs);
+	printf("[f_mount] vol=%d\n", vol);
+	printf("[f_mount] path=%s\n", path);
+	printf("[f_mount] opt=%d\n", opt);
 	if (fs) {					/* Register new filesystem object */
 		fs->pdrv = LD2PD(vol);	/* Volume hosting physical drive */
 #if FF_FS_REENTRANT				/* Create a volume mutex */
@@ -3802,9 +3808,8 @@ FRESULT f_mount (
 
 	printf("[f_mount] mount_volume\n");
 	res = mount_volume(&path, &fs, 0);	/* Force mounted the volume */
-	printf("[f_mount] LEAVE_FF\n");
-	LEAVE_FF(fs, res);
 	printf("[f_mount] done\n");
+	LEAVE_FF(fs, res);
 }
 
 

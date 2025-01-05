@@ -36,8 +36,6 @@ copy_file_from_fat32(char *filename)
     close(fd);
     return -1;
   }
-  while(1)
-    ;
   printf("[user/init.c:copy_file_from_fat32] after f_open\n");
 
   // Get file size

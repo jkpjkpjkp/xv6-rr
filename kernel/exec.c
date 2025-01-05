@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "defs.h"
 #include "elf.h"
+#include "sleeplock.h"
+#include "file.h"
 
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
 
@@ -55,7 +57,7 @@ exec(char *path, char **argv)
 
 
 
-  printf("[exec] A\n"); 
+  printf("[exec] A %d\n", readi(ip, 0, (uint64)&elf, 0, sizeof(elf))); 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
