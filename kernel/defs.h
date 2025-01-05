@@ -1,3 +1,5 @@
+#ifndef __KERNEL_DEFS_H__
+#define __KERNEL_DEFS_H__
 struct buf;
 struct context;
 struct file;
@@ -129,7 +131,8 @@ void            initsleeplock(struct sleeplock*, char*);
 char*           safestrcpy(char*, const char*, int);
 int             strncmp(const char*, const char*, uint);
 char*           strncpy(char*, const char*, int);
-void*           memmove(void*, const void*, uint);int             memcmp(const void*, const void*, uint);
+void*           memmove(void*, const void*, uint);
+int             memcmp(const void*, const void*, uint);
 void*           memset(void*, int, uint);
 int             strlen(const char*);
 
@@ -192,3 +195,4 @@ void            virtio_disk_intr(int);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
+#endif

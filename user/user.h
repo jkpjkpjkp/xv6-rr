@@ -23,10 +23,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int shutdown(void);
-int virtiodiskrw(void *buf,
-    int write,
-    int dev,
-    int blockno);
+int virtiodiskrw(void*, int, int, int);
+int getdents64(int, void*, int);
 
 typedef unsigned int uint;
 // ulib.c

@@ -38,3 +38,4 @@ entry("sleep");
 entry("uptime");
 entry("shutdown");
 entry("virtiodiskrw");
+entry("getdents64");

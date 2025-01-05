@@ -117,6 +117,8 @@ copy_all_files()
      }
     copy_file_from_fat32(fno.fname);
     printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
+
+    break; // TODO!!!!! remove!!!! 
     // while(1)
     //   ;
     // if ('a' <= *fno.fname && *fno.fname <= 'z') {
