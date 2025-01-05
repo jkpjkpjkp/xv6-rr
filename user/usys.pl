@@ -39,3 +39,28 @@ entry("uptime");
 entry("shutdown");
 entry("virtiodiskrw");
 entry("getdents64");
+
+# ----------------------------------------
+# New system calls (based on your doc):
+# ----------------------------------------
+entry("getcwd");
+entry("pipe2");
+entry("dup3");
+entry("openat");
+entry("linkat");
+entry("unlinkat");
+entry("mkdirat");
+# entry("umount2");
+# entry("mount");
+entry("clone");
+entry("execve");
+entry("wait4");
+entry("getppid");
+entry("brk");
+# entry("munmap");
+# entry("mmap");
+entry("times");
+entry("uname");
+entry("sched_yield");
+entry("gettimeofday");
+entry("nanosleep");
