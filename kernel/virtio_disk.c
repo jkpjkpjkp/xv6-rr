@@ -307,7 +307,7 @@ virtio_disk_rw(struct buf *b, int write, int dev)
   __sync_synchronize();
 
   // Additional debug: print contents of the "avail" ring after updating.
-  printf("[virtio_disk_rw] avail->idx=%d\n", disk[dev].avail->idx);
+  // printf("[virtio_disk_rw] avail->idx=%d\n", disk[dev].avail->idx);
 
   *R(VIRTIO_MMIO_QUEUE_NOTIFY, dev) = 0; // queue number
 
@@ -319,41 +319,41 @@ virtio_disk_rw(struct buf *b, int write, int dev)
   }
 
   // Thorough debug info after the request completes
-  printf("[virtio_disk_rw] Request completed, printing debug info:\n");
-  printf("  Device: %d\n", dev);
-  printf("  Block number: %d\n", b->blockno);
-  printf("  Write operation: %d\n", write);
-  printf("  Descriptor chain indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
+  // printf("[virtio_disk_rw] Request completed, printing debug info:\n");
+  // printf("  Device: %d\n", dev);
+  // printf("  Block number: %d\n", b->blockno);
+  // printf("  Write operation: %d\n", write);
+  // printf("  Descriptor chain indices: %d, %d, %d\n", idx[0], idx[1], idx[2]);
 
-  printf("  Descriptor 0: addr=0x%lx len=%d flags=0x%x next=%d\n", 
-         disk[dev].desc[idx[0]].addr,
-         disk[dev].desc[idx[0]].len,
-         disk[dev].desc[idx[0]].flags,
-         disk[dev].desc[idx[0]].next);
+  // printf("  Descriptor 0: addr=0x%lx len=%d flags=0x%x next=%d\n", 
+  //        disk[dev].desc[idx[0]].addr,
+  //        disk[dev].desc[idx[0]].len,
+  //        disk[dev].desc[idx[0]].flags,
+  //        disk[dev].desc[idx[0]].next);
 
-  printf("  Descriptor 1: addr=0x%lx len=%d flags=0x%x next=%d\n",
-         disk[dev].desc[idx[1]].addr, 
-         disk[dev].desc[idx[1]].len,
-         disk[dev].desc[idx[1]].flags,
-         disk[dev].desc[idx[1]].next);
+  // printf("  Descriptor 1: addr=0x%lx len=%d flags=0x%x next=%d\n",
+  //        disk[dev].desc[idx[1]].addr, 
+  //        disk[dev].desc[idx[1]].len,
+  //        disk[dev].desc[idx[1]].flags,
+  //        disk[dev].desc[idx[1]].next);
 
-  printf("  Descriptor 2: addr=0x%lx len=%d flags=0x%x next=%d\n",
-         disk[dev].desc[idx[2]].addr,
-         disk[dev].desc[idx[2]].len, 
-         disk[dev].desc[idx[2]].flags,
-         disk[dev].desc[idx[2]].next);
+  // printf("  Descriptor 2: addr=0x%lx len=%d flags=0x%x next=%d\n",
+  //        disk[dev].desc[idx[2]].addr,
+  //        disk[dev].desc[idx[2]].len, 
+  //        disk[dev].desc[idx[2]].flags,
+  //        disk[dev].desc[idx[2]].next);
 
-  printf("  Status byte: 0x%x\n", disk[dev].info[idx[0]].status);
-  printf("  Avail->idx: %d\n", disk[dev].avail->idx);
-  printf("  Used->idx: %d\n", disk[dev].used_idx);
-  printf("  b->disk flag (should be 0 now): %d\n", b->disk);
+  // printf("  Status byte: 0x%x\n", disk[dev].info[idx[0]].status);
+  // printf("  Avail->idx: %d\n", disk[dev].avail->idx);
+  // printf("  Used->idx: %d\n", disk[dev].used_idx);
+  // printf("  b->disk flag (should be 0 now): %d\n", b->disk);
 
   // Print first 16 bytes of data buffer
-  printf("  Data buffer (first 16 bytes): ");
-  for (int i = 0; i < 16; i++) {
-    printf("%02x ", ((unsigned char*)b->data)[i]);
-  }
-  printf("\n");
+  // printf("  Data buffer (first 16 bytes): ");
+  // for (int i = 0; i < 16; i++) {
+  //   printf("%02x ", ((unsigned char*)b->data)[i]);
+  // }
+  // printf("\n");
 
   disk[dev].info[idx[0]].b = 0;
   free_chain(idx[0], dev);
