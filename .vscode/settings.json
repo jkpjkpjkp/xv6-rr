@@ -8,6 +8,7 @@
         "ffcompat.h": "c",
         "user.h": "c",
         "fs.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "param.h": "c"
     }
 }

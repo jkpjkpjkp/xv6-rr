@@ -312,15 +312,15 @@ ilock(struct inode *ip)
   acquiresleep(&ip->lock);
 
   if(ip->valid == 0){
-    printf("[ilock] ip=%p ref=%d dev=%d inum=%d type=%d valid=%d size=%d\n",
-           ip, ip->ref, ip->dev, ip->inum, ip->type, ip->valid, ip->size);
-    printf("[ilock] lock: locked=%d pid=%d name=%s\n", 
-           ip->lock.locked, ip->lock.pid, ip->lock.name);
-    printf("[ilock] addrs: ");
-    for(int i = 0; i < NDIRECT+1; i++) {
-      printf("%d ", ip->addrs[i]);
-    }
-    printf("\n");
+    // printf("[ilock] ip=%p ref=%d dev=%d inum=%d type=%d valid=%d size=%d\n",
+    //        ip, ip->ref, ip->dev, ip->inum, ip->type, ip->valid, ip->size);
+    // printf("[ilock] lock: locked=%d pid=%d name=%s\n", 
+    //        ip->lock.locked, ip->lock.pid, ip->lock.name);
+    // printf("[ilock] addrs: ");
+    // for(int i = 0; i < NDIRECT+1; i++) {
+    //   printf("%d ", ip->addrs[i]);
+    // }
+    // printf("\n");
     printf("[ilock] ip invalid\n");
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
     dip = (struct dinode*)bp->data + ip->inum%IPB;
@@ -747,6 +747,7 @@ namex(char *path, int nameiparent, char *name)
       return ip;
     }
     if((next = dirlookup(ip, name, 0)) == 0){
+    printf("[namex] dir null\n");
       iunlockput(ip);
       return 0;
     }

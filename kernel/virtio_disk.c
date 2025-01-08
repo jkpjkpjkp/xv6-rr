@@ -151,12 +151,12 @@ virtio_disk_init(int dev) // 0 for original disk, 1 for fatfs
   status |= VIRTIO_CONFIG_S_DRIVER_OK;
   *R(VIRTIO_MMIO_STATUS, dev) = status;
 
-  printf("virtio disk %d init done\n", dev);
-  printf("virtio disk %d desc: %p\n", dev, disk[dev].desc);
-  printf("virtio disk %d avail: %p\n", dev, disk[dev].avail);
-  printf("virtio disk %d used: %p\n", dev, disk[dev].used);
-  printf("virtio disk %d status: 0x%x\n", dev, status);
-  printf("virtio disk %d queue num: %d\n", dev, NUM);
+  // printf("virtio disk %d init done\n", dev);
+  // printf("virtio disk %d desc: %p\n", dev, disk[dev].desc);
+  // printf("virtio disk %d avail: %p\n", dev, disk[dev].avail);
+  // printf("virtio disk %d used: %p\n", dev, disk[dev].used);
+  // printf("virtio disk %d status: 0x%x\n", dev, status);
+  // printf("virtio disk %d queue num: %d\n", dev, NUM);
   // plic.c and trap.c arrange for interrupts from VIRTIO0_IRQ.
 }
 

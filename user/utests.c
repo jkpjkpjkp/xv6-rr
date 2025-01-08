@@ -9,7 +9,7 @@
 #include "kernel/param.h"
 #include "fat32/ff.h"
 
-char *buf[BSIZE];
+char buf[BSIZE];
 
 uint64
 copy_file_from_fat32(char *filename)
