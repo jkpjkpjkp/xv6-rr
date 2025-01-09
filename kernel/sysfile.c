@@ -925,7 +925,7 @@ sys_munmap(void)
 uint64
 sys_virtiodiskrw(void)
 {
-  printf("[sys_virtiodiskrw] starting\n");
+  // printf("[sys_virtiodiskrw] starting\n");
   uint64 buf_addr;
   int write, dev, blockno;
   struct buf *b;

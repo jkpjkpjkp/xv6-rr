@@ -127,6 +127,7 @@ extern uint64 sys_virtiodiskrw(void);
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
+[SYS_clone]   sys_fork,
 [SYS_exit]    sys_exit,
 [SYS_exitold] sys_exit,
 [SYS_wait]    sys_wait,
@@ -138,6 +139,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_fstat]   sys_fstat,
 [SYS_chdir]   sys_chdir,
 [SYS_dup]     sys_dup,
+[SYS_dup3]    sys_dup,
 [SYS_getpid]  sys_getpid,
 [SYS_sbrk]    sys_sbrk,
 [SYS_brk]     sys_sbrk, // TODO: probably not right
@@ -176,10 +178,8 @@ syscall(void)
 
   num = p->trapframe->a7;
   if(num== 25) {
-    printf("[kernel/syscall.c:syscall] fcntl syscall detected (num=25)\n");
-    printf("[kernel/syscall.c:syscall] fcntl args: fd=%ld cmd=%ld arg=%ld\n", 
-          p->trapframe->a0, p->trapframe->a1, p->trapframe->a2);
-
+    printf("[kernel/syscall.c:syscall] sys_virtiodiskrw args: fd=%ld cmd=%ld arg=%ld blockno=%ld\n", 
+          p->trapframe->a0, p->trapframe->a1, p->trapframe->a2, p->trapframe->a3);
   }
   // printf("[kernel/syscall.c:syscall] syscall number=%d\n", num);
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
@@ -187,7 +187,7 @@ syscall(void)
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();
   } else {
-    printf("%d %s: unknown sys call %d\n",
+    panic("%d %s: unknown sys call %d\n",
             p->pid, p->name, num);
     p->trapframe->a0 = -1;
   }

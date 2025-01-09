@@ -1090,20 +1090,20 @@ static FRESULT move_window (	/* Returns FR_OK or FR_DISK_ERR */
 
 
 	if (sect != fs->winsect) {	/* Window offset changed? */
-	printf("[move_window] A\n");
+	// printf("[move_window] A\n");
 #if !FF_FS_READONLY
 		res = sync_window(fs);		/* Flush the window */
 #endif
-	printf("[move_window] B\n");
+	// printf("[move_window] B\n");
 		if (res == FR_OK) {			/* Fill sector window with new data */
-	printf("[move_window] disk_read\n");
+	// printf("[move_window] disk_read\n");
 			if (disk_read(fs->pdrv, fs->win, sect, 1) != RES_OK) {
 				sect = (LBA_t)0 - 1;	/* Invalidate window if read data is not valid */
 				res = FR_DISK_ERR;
 			}
 			fs->winsect = sect;
 		}
-	printf("[move_window] D\n");
+	// printf("[move_window] D\n");
 	}
 	return res;
 }
@@ -3703,15 +3703,15 @@ static FRESULT validate (	/* Returns FR_OK or FR_INVALID_OBJECT */
 )
 {
 	FRESULT res = FR_INVALID_OBJECT;
-	printf("[validate] starting\n");
-	printf("[validate] obj=%p\n", obj);
-	if (obj) {
-		printf("[validate] obj->fs=%p\n", obj->fs);
-		if (obj->fs) {
-			printf("[validate] obj->fs->fs_type=%d\n", obj->fs->fs_type);
-			printf("[validate] obj->id=%d obj->fs->id=%d\n", obj->id, obj->fs->id);
-		}
-	}
+	// printf("[validate] starting\n");
+	// printf("[validate] obj=%p\n", obj);
+	// if (obj) {
+	// 	printf("[validate] obj->fs=%p\n", obj->fs);
+	// 	if (obj->fs) {
+	// 		printf("[validate] obj->fs->fs_type=%d\n", obj->fs->fs_type);
+	// 		printf("[validate] obj->id=%d obj->fs->id=%d\n", obj->id, obj->fs->id);
+	// 	}
+	// }
 
 	if (obj && obj->fs && obj->fs->fs_type && obj->id == obj->fs->id) {	/* Test if the object is valid */
 #if FF_FS_REENTRANT
@@ -4034,7 +4034,7 @@ FRESULT f_read (
 
 	*br = 0;	/* Clear read byte counter */
 	res = validate(&fp->obj, &fs);				/* Check validity of the file object */
-	printf("[f_read] SS\n");
+	// printf("[f_read] SS\n");
 	// printf("f_read: fp=%p buff=%p btr=%u br=%p\n", fp, buff, btr, br);
 	// printf("f_read: fs=%p clst=%u sect=%u remain=%u rcnt=%u cc=%u csect=%u\n", fs, clst, sect, remain, rcnt, cc, csect);
 	// printf("f_read: rbuff=%p fp->fptr=%u fp->flag=0x%x fp->err=%d\n", rbuff, fp->fptr, fp->flag, fp->err);
@@ -4044,29 +4044,29 @@ FRESULT f_read (
 	if (!(fp->flag & FA_READ)) LEAVE_FF(fs, FR_DENIED); /* Check access mode */
 	remain = fp->obj.objsize - fp->fptr;
 	if (btr > remain) btr = (UINT)remain;		/* Truncate btr by remaining bytes */
-	printf("[f_read] A\n");
-	printf("[f_read] btr=%u\n", btr);
-	printf("[f_read] remain=%llu\n", (unsigned long long)remain);
-	printf("[f_read] fp->fptr=%llu\n", (unsigned long long)fp->fptr);
-	printf("[f_read] fp->obj.objsize=%llu\n", (unsigned long long)fp->obj.objsize);
-	printf("[f_read] fp->clust=%u\n", fp->clust);
-	printf("[f_read] fp->sect=%u\n", fp->sect);
-	printf("[f_read] fp->flag=0x%x\n", fp->flag);
-	printf("[f_read] fp->err=%d\n", fp->err);
-	printf("[f_read] fs->fs_type=%d\n", fs->fs_type);
-	printf("[f_read] fs->csize=%u\n", fs->csize);
-	printf("[f_read] fs->n_fats=%d\n", fs->n_fats);
-	printf("[f_read] fs->wflag=%d\n", fs->wflag);
-	printf("[f_read] fs->fsi_flag=%d\n", fs->fsi_flag);
-	printf("[f_read] fs->id=%d\n", fs->id);
-	printf("[f_read] fs->n_rootdir=%d\n", fs->n_rootdir);
-	printf("[f_read] fs->last_clst=%u\n", fs->last_clst);
-	printf("[f_read] fs->free_clst=%u\n", fs->free_clst);
-	printf("[f_read] fs->volbase=%u\n", fs->volbase);
-	printf("[f_read] fs->fatbase=%u\n", fs->fatbase);
-	printf("[f_read] fs->dirbase=%u\n", fs->dirbase);
-	printf("[f_read] fs->database=%u\n", fs->database);
-	printf("[f_read] fs->winsect=%u\n", fs->winsect);
+	// printf("[f_read] A\n");
+	// printf("[f_read] btr=%u\n", btr);
+	// printf("[f_read] remain=%llu\n", (unsigned long long)remain);
+	// printf("[f_read] fp->fptr=%llu\n", (unsigned long long)fp->fptr);
+	// printf("[f_read] fp->obj.objsize=%llu\n", (unsigned long long)fp->obj.objsize);
+	// printf("[f_read] fp->clust=%u\n", fp->clust);
+	// printf("[f_read] fp->sect=%u\n", fp->sect);
+	// printf("[f_read] fp->flag=0x%x\n", fp->flag);
+	// printf("[f_read] fp->err=%d\n", fp->err);
+	// printf("[f_read] fs->fs_type=%d\n", fs->fs_type);
+	// printf("[f_read] fs->csize=%u\n", fs->csize);
+	// printf("[f_read] fs->n_fats=%d\n", fs->n_fats);
+	// printf("[f_read] fs->wflag=%d\n", fs->wflag);
+	// printf("[f_read] fs->fsi_flag=%d\n", fs->fsi_flag);
+	// printf("[f_read] fs->id=%d\n", fs->id);
+	// printf("[f_read] fs->n_rootdir=%d\n", fs->n_rootdir);
+	// printf("[f_read] fs->last_clst=%u\n", fs->last_clst);
+	// printf("[f_read] fs->free_clst=%u\n", fs->free_clst);
+	// printf("[f_read] fs->volbase=%u\n", fs->volbase);
+	// printf("[f_read] fs->fatbase=%u\n", fs->fatbase);
+	// printf("[f_read] fs->dirbase=%u\n", fs->dirbase);
+	// printf("[f_read] fs->database=%u\n", fs->database);
+	// printf("[f_read] fs->winsect=%u\n", fs->winsect);
 	for ( ; btr > 0; btr -= rcnt, *br += rcnt, rbuff += rcnt, fp->fptr += rcnt) {	/* Repeat until btr bytes read */
 		printf("[f_read] Loop: btr=%u *br=%u fp->fptr=%llu\n", btr, *br, (unsigned long long)fp->fptr);
 		printf("[f_read] rbuff=%p\n", rbuff);

@@ -59,6 +59,7 @@ copy_file_from_fat32(char *filename)
   printf("[user/init.c:copy_file_from_fat32] buf addr=0x%p\n", buf);
   printf("[user/init.c:copy_file_from_fat32] buf size=%lu\n", sizeof(buf));
   buf[0] = '\0'; // verify addr validity. 
+
   // Copy data
   for(int i = 0; i < sz; i += BSIZE) {
     if(f_read(&fp, buf, BSIZE, &br) != FR_OK) {
@@ -67,14 +68,14 @@ copy_file_from_fat32(char *filename)
     printf("[user/init.c:copy_file_from_fat32] f_read return\n");
       return -1;
     }
-    printf("[user/init.c:copy_file_from_fat32] f_read\n");
+    printf("[user/init.c:copy_file_from_fat32] f_read %s %d\n", filename, i);
     if(write(fd, buf, br) != br) {
       close(fd);
       f_close(&fp);
     printf("[user/init.c:copy_file_from_fat32] write return\n");
       return -1;
     }
-    printf("[user/init.c:copy_file_from_fat32] write\n");
+    // printf("[user/init.c:copy_file_from_fat32] write %s\n", filename);
   }
 
   // Clean up
@@ -177,6 +178,8 @@ char *tests[] = {
   "open",
   "pipe",
   "read",
+  "sleep",
+  // what is test_e~1
   "times",
   "umount",
   "uname",

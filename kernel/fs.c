@@ -321,7 +321,7 @@ ilock(struct inode *ip)
     //   printf("%d ", ip->addrs[i]);
     // }
     // printf("\n");
-    printf("[ilock] ip invalid\n");
+    // printf("[ilock] ip invalid\n");
     bp = bread(ip->dev, IBLOCK(ip->inum, sb));
     dip = (struct dinode*)bp->data + ip->inum%IPB;
     ip->type = dip->type;
@@ -335,7 +335,7 @@ ilock(struct inode *ip)
     if(ip->type == 0)
       panic("ilock: no type");
   }
-  printf("[ilock] done\n");
+  // printf("[ilock] done\n");
   // printf("[ilock] done\n");
 }
 

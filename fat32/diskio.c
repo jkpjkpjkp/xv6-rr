@@ -62,23 +62,23 @@ DRESULT disk_read(
 		return RES_PARERR;
 	}
 
-	printf("[disk_read] M\n");
+	// printf("[disk_read] M\n");
 	// Each virtio block is 1024 bytes (BSIZE), while FAT32 sectors are 512 bytes
 	char tempbuf[1024];
 	uint32 virtio_block = sector / 2;  // Convert FAT sector to virtio block number
 	int offset = (sector % 2) * 512;   // Offset within the virtio block
 	
-	printf("[disk_read] L\n");
+	// printf("[disk_read] L\n");
 	while (count > 0) {
-		printf("[disk_read] W %u\n", count);
-		printf("[disk_read] Reading virtio_block=%u offset=%d count=%u buff=%p tempbuf=%p\n", 
+		// printf("[disk_read] W %u\n", count);
+		// printf("[disk_read] Reading virtio_block=%u offset=%d count=%u buff=%p tempbuf=%p\n", 
 			virtio_block, offset, count, buff, tempbuf);
 		if (virtiodiskrw(tempbuf, 0, DEV_MMC, virtio_block) < 0) {
-		printf("[disk_read] WE\n");
+		// printf("[disk_read] WE\n");
 			return RES_ERROR;
 		}
 
-		printf("[disk_read] WW\n");
+		// printf("[disk_read] WW\n");
 		// Copy the relevant 512-byte sector from the 1024-byte block
 		int copy_size = 512;
 		if (count == 1) {
