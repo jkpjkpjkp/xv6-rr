@@ -668,28 +668,49 @@ skipelem(char *path, char *name)
 }
 
 /// @brief finds inode for abs or relative path
-/// @param fd (optional) parent dir (tmp working dir) fd
-/// @param path abs or relative path. if abs, `fd` is ignored. if path==0, return file[fd]->ip
+/// @param fd (optional) parent dir (tmp working dir) fd.
+///        if fd == -100, path is considered relative to current dir.
+/// @param path abs or relative path. if abs, fd is ignored. if path==0, return file[fd]->ip
 /// @return retrieved inode
 struct inode*
 namefd(int fd, int nameiparent, char *path, char *name)
 {
   struct inode *ip, *next;
   struct file *f;
+
+  // If path is NULL, then just return the inode of fd (or cwd if fd == -100).
   if(!path){
-    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
+    if(fd == -100) {
+      // Return current working directory
+      // Usually we do an idup if we plan to iunlockput() later; 
+      // but if the caller just needs the pointer, returning cwd is enough.
+      return myproc()->cwd;
+    }
+    // Original check
+    if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
       return 0;
     return f->ip;
   }
-  if(*path == '/')
+
+  // If path is absolute, ignore fd and start from root.
+  if(*path == '/'){
     ip = iget(ROOTDEV, ROOTINO);
-  else{
-    if(fd < 0 || fd >= NOFILE || (f=myproc()->ofile[fd]) == 0)
-      return 0;
-    ip = f->ip;
+  } else {
+    // Path is relative. Decide how to get the "start inode."
+    if(fd == -100) {
+      // Use cwd as the base
+      // If you plan to call iunlockput(ip) after you’re done, 
+      // you’ll want to take an extra ref with idup(myproc()->cwd).
+      ip = idup(myproc()->cwd);
+    } else {
+      // Original logic: path relative to file descriptor's inode
+      if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
+        return 0;
+      ip = f->ip;
+    }
   }
 
-  // copied from `static struct inode* namex(`
+  // The remainder is copied from the usual namex() logic in xv6.
   while((path = skipelem(path, name)) != 0){
     ilock(ip);
     if(ip->type != T_DIR){
@@ -708,12 +729,14 @@ namefd(int fd, int nameiparent, char *path, char *name)
     iunlockput(ip);
     ip = next;
   }
+
   if(nameiparent){
     iput(ip);
     return 0;
   }
   return ip;
 }
+
 
 // Look up and return the inode for a path name.
 // If parent != 0, return the inode for the parent and copy the final
