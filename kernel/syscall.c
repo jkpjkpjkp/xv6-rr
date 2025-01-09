@@ -76,10 +76,10 @@ argaddr(int n, uint64 *ip)
 int
 argstr(int n, char *buf, int max)
 {
-  printf("[kernel/syscall.c:argstr] n=%d max=%d\n", n, max);
+  // printf("[kernel/syscall.c:argstr] n=%d max=%d\n", n, max);
   uint64 addr;
   argaddr(n, &addr);
-  printf("[kernel/syscall.c:argstr] addr=0x%lx\n", addr);
+  // printf("[kernel/syscall.c:argstr] addr=0x%lx\n", addr);
   return fetchstr(addr, buf, max);
 }
 

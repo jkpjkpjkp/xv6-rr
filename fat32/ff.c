@@ -4835,7 +4835,7 @@ FRESULT f_readdir (
 	FRESULT res;
 	FATFS *fs;
 	DEF_NAMBUF
-	printf("[f_readdir] starting\n");
+
 	printf("[f_readdir] dp=%p\n", dp);
 	printf("[f_readdir] fno=%p\n", fno);
 	if (dp) {
@@ -4851,26 +4851,33 @@ FRESULT f_readdir (
 	printf("[f_readdir] validate=%d\n", res);
 	if (res == FR_OK) {
 		if (!fno) {
-	printf("[f_readdir] A\n");
+
 			res = dir_sdi(dp, 0);		/* Rewind the directory object */
 		} else {
-	printf("[f_readdir] B\n");
+
 			INIT_NAMBUF(fs);
-	printf("[f_readdir] BB\n");
+
 			res = DIR_READ_FILE(dp);		/* Read an item */
-	printf("[f_readdir] BBB\n");
+
 			if (res == FR_NO_FILE) res = FR_OK;	/* Ignore end of directory */
 			if (res == FR_OK) {				/* A valid entry is found */
-	printf("[f_readdir] C\n");
+
 				get_fileinfo(dp, fno);		/* Get the object information */
-	printf("[f_readdir] D\n");
+
 				res = dir_next(dp, 0);		/* Increment index for next */
 				if (res == FR_NO_FILE) res = FR_OK;	/* Ignore end of directory now */
 			}
 			FREE_NAMBUF();
 		}
 	}
-	printf("[f_readdir] done\n");
+	if (fno->fname[0] == 'T' && fno->fname[4] == '_') {
+	printf("[f_readdir] ALERT: Found TEST_ file:\n");
+	printf("[f_readdir]   fname: %s\n", fno->fname);
+	printf("[f_readdir]   fsize: %u\n", fno->fsize);
+	printf("[f_readdir]   fattrib: 0x%02x\n", fno->fattrib);
+	printf("[f_readdir]   fdate: %u\n", fno->fdate); 
+	printf("[f_readdir]   ftime: %u\n", fno->ftime);
+	}
 	LEAVE_FF(fs, res);
 }
 

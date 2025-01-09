@@ -726,6 +726,7 @@ sys_mknod(void)
   if((argstr(0, path, MAXPATH)) < 0 ||
      (ip = create(path, T_DEVICE, major, minor, 0)) == 0){
     end_op();
+    printf("[mknod]: ERROR create failed\n");
     return -1;
   }
   iunlockput(ip);

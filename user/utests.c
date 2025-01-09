@@ -9,7 +9,17 @@
 #include "kernel/param.h"
 #include "fat32/ff.h"
 
+// const int BUFFER_SIZE = 16384;
 char buf[BSIZE];
+
+// int
+// min(int x, int y)
+// {
+//   if(x < y)
+//     return x;
+//   else
+//     return y;
+// }
 
 uint64
 copy_file_from_fat32(char *filename)
@@ -32,32 +42,32 @@ copy_file_from_fat32(char *filename)
     printf("failed to create %s\n", path);
     return -1;
   }
-  printf("[user/init.c:copy_file_from_fat32] before f_open\n");
+  // printf("[user/init.c:copy_file_from_fat32] before f_open\n");
   // Open source file from FAT32
   if(f_open(&fp, path+7, FA_READ) != FR_OK) {
     close(fd);
     return -1;
   }
-  printf("[user/init.c:copy_file_from_fat32] after f_open\n");
+  // printf("[user/init.c:copy_file_from_fat32] after f_open\n");
 
   // Get file size
   sz = f_size(&fp);
-  printf("[user/init.c:copy_file_from_fat32] file size is %d\n", sz);
+  // printf("[user/init.c:copy_file_from_fat32] file size is %d\n", sz);
 
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.fs=0x%p\n", fp.obj.fs);
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.id=%d\n", fp.obj.id);
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.attr=%d\n", fp.obj.attr);
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.stat=%d\n", fp.obj.stat);
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.sclust=%u\n", fp.obj.sclust);
-  printf("[user/init.c:copy_file_from_fat32] fp.obj.objsize=%llu\n", (unsigned long long)fp.obj.objsize);
-  printf("[user/init.c:copy_file_from_fat32] fp.flag=0x%x\n", fp.flag);
-  printf("[user/init.c:copy_file_from_fat32] fp.err=%d\n", fp.err);
-  printf("[user/init.c:copy_file_from_fat32] fp.fptr=%llu\n", (unsigned long long)fp.fptr);
-  printf("[user/init.c:copy_file_from_fat32] fp.clust=%u\n", fp.clust);
-  printf("[user/init.c:copy_file_from_fat32] fp.sect=%u\n", fp.sect);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.fs=0x%p\n", fp.obj.fs);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.id=%d\n", fp.obj.id);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.attr=%d\n", fp.obj.attr);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.stat=%d\n", fp.obj.stat);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.sclust=%u\n", fp.obj.sclust);
+  // printf("[user/init.c:copy_file_from_fat32] fp.obj.objsize=%llu\n", (unsigned long long)fp.obj.objsize);
+  // printf("[user/init.c:copy_file_from_fat32] fp.flag=0x%x\n", fp.flag);
+  // printf("[user/init.c:copy_file_from_fat32] fp.err=%d\n", fp.err);
+  // printf("[user/init.c:copy_file_from_fat32] fp.fptr=%llu\n", (unsigned long long)fp.fptr);
+  // printf("[user/init.c:copy_file_from_fat32] fp.clust=%u\n", fp.clust);
+  // printf("[user/init.c:copy_file_from_fat32] fp.sect=%u\n", fp.sect);
 
-  printf("[user/init.c:copy_file_from_fat32] buf addr=0x%p\n", buf);
-  printf("[user/init.c:copy_file_from_fat32] buf size=%lu\n", sizeof(buf));
+  // printf("[user/init.c:copy_file_from_fat32] buf addr=0x%p\n", buf);
+  // printf("[user/init.c:copy_file_from_fat32] buf size=%lu\n", sizeof(buf));
   buf[0] = '\0'; // verify addr validity. 
 
   // Copy data
@@ -65,14 +75,14 @@ copy_file_from_fat32(char *filename)
     if(f_read(&fp, buf, BSIZE, &br) != FR_OK) {
       close(fd);
       f_close(&fp);
-    printf("[user/init.c:copy_file_from_fat32] f_read return\n");
+    printf("[user/init.c:copy_file_from_fat32] WARNING: f_read return\n");
       return -1;
     }
     printf("[user/init.c:copy_file_from_fat32] f_read %s %d\n", filename, i);
     if(write(fd, buf, br) != br) {
       close(fd);
       f_close(&fp);
-    printf("[user/init.c:copy_file_from_fat32] write return\n");
+    printf("[user/init.c:copy_file_from_fat32] WARNING: write return\n");
       return -1;
     }
     // printf("[user/init.c:copy_file_from_fat32] write %s\n", filename);
@@ -82,7 +92,7 @@ copy_file_from_fat32(char *filename)
   close(fd);
   f_close(&fp);
 
-  printf("[user/init.c:copy_file_from_fat32] done\n");
+  printf("[user/init.c:copy_file_from_fat32] done %s\n", path);
   return 0;
 }
 

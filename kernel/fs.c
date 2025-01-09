@@ -585,6 +585,9 @@ dirlookup(struct inode *dp, char *name, uint *poff)
       panic("dirlookup read");
     if(de.inum == 0)
       continue;
+    if (name[0] == 'c' && name[1] == 'o' && name[2] == 'n' && name[3] == 's') {
+
+    }
     if(namecmp(name, de.name) == 0){
       // entry matches path element
       if(poff)
@@ -678,34 +681,21 @@ namefd(int fd, int nameiparent, char *path, char *name)
   struct inode *ip, *next;
   struct file *f;
 
-  // If path is NULL, then just return the inode of fd (or cwd if fd == -100).
   if(!path){
-    if(fd == -100) {
-      // Return current working directory
-      // Usually we do an idup if we plan to iunlockput() later; 
-      // but if the caller just needs the pointer, returning cwd is enough.
-      return myproc()->cwd;
-    }
-    // Original check
-    if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
-      return 0;
-    return f->ip;
+    panic("[namefd] null path");
   }
 
-  // If path is absolute, ignore fd and start from root.
   if(*path == '/'){
     ip = iget(ROOTDEV, ROOTINO);
   } else {
-    // Path is relative. Decide how to get the "start inode."
     if(fd == -100) {
-      // Use cwd as the base
-      // If you plan to call iunlockput(ip) after you’re done, 
-      // you’ll want to take an extra ref with idup(myproc()->cwd).
       ip = idup(myproc()->cwd);
     } else {
-      // Original logic: path relative to file descriptor's inode
-      if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
+      // path relative to file descriptor's inode
+      if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0) {
+    printf("[namex] fd illegal fd=%d\n", fd);
         return 0;
+      }
       ip = f->ip;
     }
   }
@@ -724,6 +714,7 @@ namefd(int fd, int nameiparent, char *path, char *name)
     }
     if((next = dirlookup(ip, name, 0)) == 0){
       iunlockput(ip);
+    printf("[namefd] dir null\n");
       return 0;
     }
     iunlockput(ip);
@@ -734,6 +725,7 @@ namefd(int fd, int nameiparent, char *path, char *name)
     iput(ip);
     return 0;
   }
+  printf("[namefd] return normally\n");
   return ip;
 }
 
@@ -770,6 +762,8 @@ namex(char *path, int nameiparent, char *name)
       return ip;
     }
     if((next = dirlookup(ip, name, 0)) == 0){
+    printf("[namex] dirlookup failed: path=%s name=%s ip->type=%d ip->major=%d ip->minor=%d ip->size=%d\n",
+           path, name, ip->type, ip->major, ip->minor, ip->size);
     printf("[namex] dir null\n");
       iunlockput(ip);
       return 0;
