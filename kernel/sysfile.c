@@ -442,15 +442,17 @@ bad:
 uint64
 sys_unlinkat(void)
 {
-  int dirfd;
+  int dirfd, flags;
   struct inode *ip, *dp;
   struct dirent de;
   char name[DIRSIZ], path[MAXPATH];
   uint off;
 
   argint(0, &dirfd);
+  argint(2, &flags);
   if(argstr(1, path, MAXPATH) < 0)
     return -1;
+
 
   begin_op();
   if((dp = namefd(dirfd, 1, path, name)) == 0){

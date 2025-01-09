@@ -121,13 +121,13 @@ extern uint64 sys_gettimeofday(void);
 extern uint64 sys_nanosleep(void);
 extern uint64 sys_shutdown(void);
 extern uint64 sys_virtiodiskrw(void);
-
+extern uint64 sys_clone(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
 static uint64 (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
-[SYS_clone]   sys_fork,
+[SYS_clone]   sys_clone,
 [SYS_exit]    sys_exit,
 [SYS_exitold] sys_exit,
 [SYS_wait]    sys_wait,

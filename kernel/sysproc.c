@@ -47,6 +47,61 @@ sys_fork(void)
   return fork();
 }
 
+// * 功能：创建一个子进程；
+// * 输入：
+//     - flags: 创建的标志，如SIGCHLD；
+//     - stack: 指定新进程的栈，可为0；
+//     - ptid: 父线程ID；
+//     - tls: TLS线程本地存储描述符；
+//     - ctid: 子线程ID；
+// * 返回值：成功则返回子进程的线程ID，失败返回-1；
+uint64
+sys_clone(void)
+{
+  int flags;
+  uint64 stack, ptid, tls, ctid;
+  
+  argint(0, &flags);
+  argaddr(1, &stack);
+  argaddr(2, &ptid);
+  argaddr(3, &tls);
+  argaddr(4, &ctid);
+
+  int pid = fork();
+  if(pid < 0) {
+    return -1;
+  }
+  
+  if(pid == 0) {
+    // Child process
+    if(stack != 0) {
+      myproc()->trapframe->sp = stack;
+    }
+    
+    // Set up TLS if provided
+    if(tls != 0) {
+      myproc()->trapframe->tp = tls;
+    }
+    
+    // Write child thread ID if requested
+    if(ctid != 0) {
+      if(copyout(myproc()->pagetable, ctid, (char*)&pid, sizeof(pid)) < 0) {
+        return -1;
+      }
+    }
+  } else {
+    // Parent process
+    // Write parent thread ID if requested 
+    if(ptid != 0) {
+      if(copyout(myproc()->pagetable, ptid, (char*)&pid, sizeof(pid)) < 0) {
+        return -1;
+      }
+    }
+  }
+
+  return pid;
+}
+
 uint64
 sys_wait(void)
 {
@@ -224,7 +279,28 @@ sys_gettimeofday(void)
 uint64
 sys_uname(void)
 {
-  return -1;  // Dummy implementation
+  uint64 addr;
+  struct utsname {
+    char sysname[65];
+    char nodename[65];
+    char release[65];
+    char version[65];
+    char machine[65];
+  } uts;
+
+  argaddr(0, &addr);
+
+  // Fill in system information
+  safestrcpy(uts.sysname, "xv6-riscv", sizeof(uts.sysname));
+  safestrcpy(uts.nodename, "xv6", sizeof(uts.nodename));
+  safestrcpy(uts.release, "1.0", sizeof(uts.release));
+  safestrcpy(uts.version, "xv6 kernel version 1.0", sizeof(uts.version));
+  safestrcpy(uts.machine, "RISC-V", sizeof(uts.machine));
+
+  if(copyout(myproc()->pagetable, addr, (char *)&uts, sizeof(uts)) < 0)
+    return -1;
+
+  return 0;
 }
 
 uint64
