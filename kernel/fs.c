@@ -745,7 +745,7 @@ namefd(int fd, int nameiparent, char *path, char *name)
 static struct inode*
 namex(char *path, int nameiparent, char *name)
 {
-  printf("[namex] starting\n");
+  // printf("[namex] starting\n");
   struct inode *ip, *next;
 
   if(*path == '/')
@@ -757,15 +757,15 @@ namex(char *path, int nameiparent, char *name)
   while((path = skipelem(path, name)) != 0){
     // printf("[namex] skipelem\n");
     ilock(ip);
-    printf("[namex] locked\n");
+    // printf("[namex] locked\n");
     if(ip->type != T_DIR){
       iunlockput(ip);
       return 0;
     }
-    printf("[namex] mid while\n");
+    // printf("[namex] mid while\n");
     if(nameiparent && *path == '\0'){
       // Stop one level early.
-      printf("[namex] Stop one level early\n");
+      // printf("[namex] Stop one level early\n");
       iunlock(ip);
       return ip;
     }
@@ -774,7 +774,7 @@ namex(char *path, int nameiparent, char *name)
       iunlockput(ip);
       return 0;
     }
-    printf("[namex] unlocking\n");
+    // printf("[namex] unlocking\n");
     iunlockput(ip);
     ip = next;
   }

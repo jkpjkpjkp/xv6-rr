@@ -25,11 +25,11 @@ int flags2perm(int flags)
 int
 exec(char *path, char **argv)
 {
-  printf("[exec] path=%s\n", path);
+  printf("[exec] path=%s ", path);
   if(argv){
-    printf("[exec] argv[0]=%s\n", argv[0]);
+    printf(" argv[0]=%s\n", argv[0]);
   } else {
-    printf("[exec] argv=null\n"); 
+    printf(" argv=null\n"); 
   }
   char *s, *last;
   int i, off;
@@ -47,13 +47,7 @@ exec(char *path, char **argv)
     return -1;
   }
   ilock(ip);
-  printf("[exec] ip->type=%d\n", ip->type);
-  printf("[exec] ip->major=%d\n", ip->major);
-  printf("[exec] ip->minor=%d\n", ip->minor);
-  printf("[exec] ip->nlink=%d\n", ip->nlink);
-  printf("[exec] ip->size=%d\n", ip->size);
-  printf("[exec] ip->ref=%d\n", ip->ref);
-  printf("[exec] ip->valid=%d\n", ip->valid);
+  printf("[exec] ip->type=%d major=%d minor=%d nlink=%d size=%d ref=%d valid=%d\n", ip->type, ip->major, ip->minor, ip->nlink, ip->size, ip->ref, ip->valid);
 
 
 
@@ -62,12 +56,12 @@ exec(char *path, char **argv)
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))
     goto bad;
 
-  printf("[exec] B\n"); 
+  // printf("[exec] B\n"); 
   if(elf.magic != ELF_MAGIC)
     goto bad;
 
   
-  printf("[exec] C\n"); 
+  // printf("[exec] C\n"); 
 
   if((pagetable = proc_pagetable(p)) == 0)
     goto bad;

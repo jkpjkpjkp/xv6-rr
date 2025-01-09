@@ -759,7 +759,7 @@ sys_chdir(void)
 }
 
 uint64
-sys_getcwd(void)
+sys_getdir(void)
 {
   int n;
   uint64 buf;
@@ -838,17 +838,17 @@ sys_getdents64(void)
 uint64
 sys_exec(void)
 {
-  printf("[sys_exec] starting\n");
+  // printf("[sys_exec] starting\n");
   char path[MAXPATH], *argv[MAXARG];
   int i;
   uint64 uargv, uarg;
 
   argaddr(1, &uargv);
-  printf("[sys_exec] why\n");
+  // printf("[sys_exec] why\n");
   if(argstr(0, path, MAXPATH) < 0) {
     return -1;
   }
-  printf("[sys_exec] args\n");
+  // printf("[sys_exec] args\n");
   memset(argv, 0, sizeof(argv));
   for(i=0;; i++){
     if(i >= NELEM(argv)){
@@ -868,7 +868,7 @@ sys_exec(void)
       goto bad;
   }
 
-  printf("[sys_exec] exec\n");
+  // printf("[sys_exec] exec\n");
   int ret = exec(path, argv);
 
   for(i = 0; i < NELEM(argv) && argv[i] != 0; i++)

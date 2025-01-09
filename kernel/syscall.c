@@ -93,6 +93,7 @@ extern uint64 sys_kill(void);
 extern uint64 sys_exec(void);
 extern uint64 sys_fstat(void);
 extern uint64 sys_chdir(void);
+extern uint64 sys_getdir(void);
 extern uint64 sys_dup(void);
 extern uint64 sys_getpid(void);
 extern uint64 sys_getppid(void);
@@ -123,6 +124,7 @@ extern uint64 sys_nanosleep(void);
 extern uint64 sys_shutdown(void);
 extern uint64 sys_virtiodiskrw(void);
 extern uint64 sys_clone(void);
+extern uint64 sys_getdents64(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -139,6 +141,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_execold] sys_exec,
 [SYS_fstat]   sys_fstat,
 [SYS_chdir]   sys_chdir,
+[SYS_getdir]  sys_getdir,
 [SYS_dup]     sys_dup,
 [SYS_dup3]    sys_dup,
 [SYS_getpid]  sys_getpid,
@@ -169,6 +172,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_nanosleep]    sys_nanosleep,
 [SYS_shutdown]     sys_shutdown,
 [SYS_virtiodiskrw] sys_virtiodiskrw,
+[SYS_getdents64]   sys_getdents64,
 };
 
 void
