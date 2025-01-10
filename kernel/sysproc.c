@@ -122,18 +122,17 @@ sys_sbrk(void)
     return -1;
   return addr;
 }
-
+// only difference is the return value. 
 uint64
 sys_brk(void)
 {
-  uint64 addr;
-  int n;
+  uint64 addr, brk;
 
-  argint(0, &n);
+  argaddr(0, &brk);
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if(growproc((int)(brk-addr)) < 0)
     return -1;
-  return addr;
+  return 0;
 }
 
 uint64

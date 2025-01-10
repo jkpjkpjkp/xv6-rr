@@ -670,65 +670,6 @@ skipelem(char *path, char *name)
   return path;
 }
 
-/// @brief finds inode for abs or relative path
-/// @param fd (optional) parent dir (tmp working dir) fd.
-///        if fd == -100, path is considered relative to current dir.
-/// @param path abs or relative path. if abs, fd is ignored. if path==0, return file[fd]->ip
-/// @return retrieved inode
-struct inode*
-namefd(int fd, int nameiparent, char *path, char *name)
-{
-  struct inode *ip, *next;
-  struct file *f;
-
-  if(!path){
-    panic("[namefd] null path");
-  }
-
-  if(*path == '/'){
-    ip = iget(ROOTDEV, ROOTINO);
-  } else {
-    if(fd == -100) {
-      ip = idup(myproc()->cwd);
-    } else {
-      // path relative to file descriptor's inode
-      if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0) {
-    printf("[namex] fd illegal fd=%d\n", fd);
-        return 0;
-      }
-      ip = f->ip;
-    }
-  }
-
-  // The remainder is copied from the usual namex() logic in xv6.
-  while((path = skipelem(path, name)) != 0){
-    ilock(ip);
-    if(ip->type != T_DIR){
-      iunlockput(ip);
-      return 0;
-    }
-    if(nameiparent && *path == '\0'){
-      // Stop one level early.
-      iunlock(ip);
-      return ip;
-    }
-    if((next = dirlookup(ip, name, 0)) == 0){
-      iunlockput(ip);
-    printf("[namefd] dir null\n");
-      return 0;
-    }
-    iunlockput(ip);
-    ip = next;
-  }
-
-  if(nameiparent){
-    iput(ip);
-    return 0;
-  }
-  printf("[namefd] return normally\n");
-  return ip;
-}
-
 
 // Look up and return the inode for a path name.
 // If parent != 0, return the inode for the parent and copy the final
@@ -779,6 +720,59 @@ namex(char *path, int nameiparent, char *name)
   printf("[namex] return normally\n");
   return ip;
 }
+
+/// @brief finds inode for abs or relative path
+/// @param fd (optional) parent dir (tmp working dir) fd.
+///        if fd == -100, path is considered relative to current dir.
+/// @param path abs or relative path. if abs, fd is ignored. if path==0, return file[fd]->ip
+/// @return retrieved inode
+struct inode*
+namefd(int fd, int nameiparent, char *path, char *name)
+{
+  // although fd==0 is a legal fd, 
+  // by convention we treat it as illegal here. 
+  if(fd <= 0 || path[0] == '/'){
+    return namex(path, nameiparent, name);
+  }
+  struct inode *ip, *next;
+  struct file *f;
+
+  if((f = myproc()->ofile[fd]) == 0) {
+    printf("[namex] fd illegal fd=%d\n", fd);
+    return 0;
+  }
+  ip = f->ip;
+
+  // The remainder is copied from the usual namex() logic in xv6.
+  while((path = skipelem(path, name)) != 0){
+    ilock(ip);
+    if(ip->type != T_DIR){
+      iunlockput(ip);
+      return 0;
+    }
+    if(nameiparent && *path == '\0'){
+      // Stop one level early.
+      iunlock(ip);
+      return ip;
+    }
+    if((next = dirlookup(ip, name, 0)) == 0){
+      iunlockput(ip);
+    printf("[namefd] dir null\n");
+      return 0;
+    }
+    iunlockput(ip);
+    ip = next;
+  }
+
+  if(nameiparent){
+    iput(ip);
+    return 0;
+  }
+  printf("[namefd] return normally\n");
+  return ip;
+}
+
+
 
 struct inode*
 namei(char *path)

@@ -508,30 +508,23 @@ create(char *path, short type, short major, short minor, int fd)
   struct inode *ip, *dp;
   char name[DIRSIZ];
 
-  if(fd > 0)
-    dp = namefd(fd, 1, path, name);
-  else
-    dp = nameiparent(path, name);
+  dp = namefd(fd, 1, path, name);
 
-  if(dp == 0)
+  if(dp == 0) {
+    printf("[create] WARNING: dir ip null - path: %s, fd: %d, type: %d\n", path, fd, type);
     return 0;
+  }
 
-  printf("[create] locking dir ip\n");
   ilock(dp);
-  printf("[create] locked\n");
 
   if((ip = dirlookup(dp, name, 0)) != 0){
     iunlockput(dp);
-  printf("[create] locking ip\n");
     ilock(ip);
-  printf("[create] locked ip\n");
     if(type == T_FILE && (ip->type == T_FILE || ip->type == T_DEVICE))
       return ip;
     iunlockput(ip);
     return 0;
   }
-
-  printf("[create] dirlookup done\n");
 
   if((ip = ialloc(dp->dev, type)) == 0){
     iunlockput(dp);

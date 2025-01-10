@@ -4068,8 +4068,8 @@ FRESULT f_read (
 	// printf("[f_read] fs->database=%u\n", fs->database);
 	// printf("[f_read] fs->winsect=%u\n", fs->winsect);
 	for ( ; btr > 0; btr -= rcnt, *br += rcnt, rbuff += rcnt, fp->fptr += rcnt) {	/* Repeat until btr bytes read */
-		printf("[f_read] Loop: btr=%u *br=%u fp->fptr=%llu\n", btr, *br, (unsigned long long)fp->fptr);
-		printf("[f_read] rbuff=%p\n", rbuff);
+		// printf("[f_read] Loop: btr=%u *br=%u fp->fptr=%llu\n", btr, *br, (unsigned long long)fp->fptr);
+		// printf("[f_read] rbuff=%p\n", rbuff);
 		if (fp->fptr % SS(fs) == 0) {			/* On the sector boundary? */
 			csect = (UINT)(fp->fptr / SS(fs) & (fs->csize - 1));	/* Sector offset in the cluster */
 			if (csect == 0) {					/* On the cluster boundary? */
@@ -4134,7 +4134,7 @@ FRESULT f_read (
 		memcpy(rbuff, fp->buf + fp->fptr % SS(fs), rcnt);	/* Extract partial sector */
 #endif
 	}
-printf("[f_read] done\n");
+// printf("[f_read] done\n");
 	LEAVE_FF(fs, FR_OK);
 }
 
