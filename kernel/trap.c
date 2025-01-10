@@ -70,6 +70,8 @@ usertrap(void)
   } else {
     printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
     printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+    printf("            sz=0x%lu\n", p->sz);
+    printf("            name=%s\n", p->name);
     setkilled(p);
   }
 

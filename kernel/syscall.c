@@ -125,6 +125,7 @@ extern uint64 sys_shutdown(void);
 extern uint64 sys_virtiodiskrw(void);
 extern uint64 sys_clone(void);
 extern uint64 sys_getdents64(void);
+extern uint64 sys_unlinkat(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -173,6 +174,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_shutdown]     sys_shutdown,
 [SYS_virtiodiskrw] sys_virtiodiskrw,
 [SYS_getdents64]   sys_getdents64,
+[SYS_unlinkat] sys_unlinkat,
 };
 
 void
@@ -183,6 +185,9 @@ syscall(void)
   struct proc *p = myproc();
 
   num = p->trapframe->a7;
+  if(num==93) {
+    printf("[kernel/syscall.c:syscall] exit\n");
+  }
   if(num== 25) {
     printf("[kernel/syscall.c:syscall] sys_virtiodiskrw args: fd=%ld cmd=%ld arg=%ld blockno=%ld\n", 
           p->trapframe->a0, p->trapframe->a1, p->trapframe->a2, p->trapframe->a3);

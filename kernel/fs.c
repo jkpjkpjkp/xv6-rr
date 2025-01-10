@@ -703,9 +703,8 @@ namex(char *path, int nameiparent, char *name)
       return ip;
     }
     if((next = dirlookup(ip, name, 0)) == 0){
-    printf("[namex] dirlookup failed: path=%s name=%s ip->type=%d ip->major=%d ip->minor=%d ip->size=%d\n",
-           path, name, ip->type, ip->major, ip->minor, ip->size);
-    printf("[namex] dir null\n");
+    printf("[namex] WARNING: dirlookup null: path=%s name=%s ip->type=%d ip->size=%d ip->dev=%u, ip->inum=%u\n",
+           path, name, ip->type, ip->size, ip->dev, ip->inum);
       iunlockput(ip);
       return 0;
     }
@@ -713,11 +712,10 @@ namex(char *path, int nameiparent, char *name)
     iunlockput(ip);
     ip = next;
   }
-  if(nameiparent){
+  if(nameiparent){printf("[namex] WARNING: dirlookup failed");
     iput(ip);
     return 0;
   }
-  printf("[namex] return normally\n");
   return ip;
 }
 

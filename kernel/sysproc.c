@@ -26,6 +26,7 @@ sys_exit(void)
   int n;
   argint(0, &n);
   exit(n);
+  printf("[sys_exit] WARNING: exit reached return %d\n", n);
   return 0;  // not reached
 }
 
@@ -130,8 +131,15 @@ sys_brk(void)
 
   argaddr(0, &brk);
   addr = myproc()->sz;
-  if(growproc((int)(brk-addr)) < 0)
+  printf("[sys_brk] addr=0x%lx brk=0x%lx\n", addr, brk);
+  printf("[sys_brk] myproc()->sz=0x%lu\n", myproc()->sz);
+  printf("[sys_brk] growproc size=%d\n", (int)(brk-addr));
+  if(growproc((int)(brk-addr)) < 0) {
+    printf(
+      "[sys_sbrk] WARNING: growproc failed"
+    );
     return -1;
+  }
   return 0;
 }
 

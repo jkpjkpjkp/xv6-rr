@@ -436,6 +436,7 @@ sys_unlink(void)
 bad:
   iunlockput(dp);
   end_op();
+  printf("[sys_unlink] WARNING: bad\n");
   return -1;
 }
 
@@ -450,13 +451,16 @@ sys_unlinkat(void)
 
   argint(0, &dirfd);
   argint(2, &flags);
-  if(argstr(1, path, MAXPATH) < 0)
+  if(argstr(1, path, MAXPATH) < 0) {
+    printf("[sys_unlinkat] WARNING: argstr failed\n");
     return -1;
+  }
 
 
   begin_op();
   if((dp = namefd(dirfd, 1, path, name)) == 0){
     end_op();
+    printf("[sys_unlinkat] WARNING: namefd failed\n");
     return -1;
   }
 
@@ -498,6 +502,7 @@ sys_unlinkat(void)
 bad:
   iunlockput(dp);
   end_op();
+  printf("[sys_unlinkat] WARNING: bad\n");
   return -1;
 }
 
@@ -575,8 +580,10 @@ sys_open(void)
   int n;
 
   argint(1, &omode);
-  if((n = argstr(0, path, MAXPATH)) < 0)
+  if((n = argstr(0, path, MAXPATH)) < 0) {
+    printf("[sys_open] WARNING: argstr failed: n=%d\n", n);
     return -1;
+  }
 
   begin_op();
 
@@ -584,17 +591,21 @@ sys_open(void)
     ip = create(path, T_FILE, 0, 0, 0);
     if(ip == 0){
       end_op();
+      printf("[sys_open] WARNING: create failed: path=%s\n", path);
       return -1;
     }
   } else {
+    printf("[sys_open] no O_CREATE\n");
     if((ip = namei(path)) == 0){
       end_op();
+      printf("[sys_open] WARNING: namei failed: path=%s\n", path);
       return -1;
     }
     ilock(ip);
     if(ip->type == T_DIR && omode != O_RDONLY){
       iunlockput(ip);
       end_op();
+      printf("[sys_open] WARNING: cannot write to directory: path=%s\n", path);
       return -1;
     }
   }
@@ -602,6 +613,7 @@ sys_open(void)
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
     iunlockput(ip);
     end_op();
+    printf("[sys_open] WARNING 3\n");
     return -1;
   }
 
@@ -610,6 +622,7 @@ sys_open(void)
       fileclose(f);
     iunlockput(ip);
     end_op();
+    printf("[sys_open] WARNING 4\n");
     return -1;
   }
 
@@ -648,7 +661,7 @@ sys_openat(void) // TODO: double check the O_CREATE is set as always on
   if(path[0] == '/' || fd == -100) {
     struct proc *p = myproc();
     p->trapframe->a0 = p->trapframe->a1;
-    p->trapframe->a1 = p->trapframe->a2;
+    p->trapframe->a1 = p->trapframe->a2 | O_CREATE;
     return sys_open();
   }
 
@@ -664,7 +677,7 @@ sys_openat(void) // TODO: double check the O_CREATE is set as always on
   safestrcpy(path, fullpath, MAXPATH);
   struct proc *p = myproc();
   p->trapframe->a0 = p->trapframe->a1;
-  p->trapframe->a1 = p->trapframe->a2;
+  p->trapframe->a1 = p->trapframe->a2 | O_CREATE;
   return sys_open();
 }
 
@@ -693,12 +706,15 @@ sys_mkdirat(void)
 
 
   argint(0, &dirfd);
-  if(argstr(1, path, MAXPATH) < 0)
+  if(argstr(1, path, MAXPATH) < 0) {
+    printf("[sys_mkdirat] WARNING: argstr\n");
     return -1;
+  }
   
   begin_op();
   if((ip = create(path, T_DIR, 0, 0, dirfd)) == 0){
     end_op();
+    printf("[sys_mkdirat] WARNING: create\n");
     return -1;
   }
   iunlockput(ip);
@@ -761,9 +777,15 @@ sys_getdir(void)
   char fullpath[MAXPATH] = "";
   n = pwd(fullpath);
 
+  if(n==0){
+    printf("[sys_getdir] WARNING: pwd failed path=%s n=%d\n", fullpath, n);
+  }
+
   struct proc *p = myproc();
-  if(copyout(p->pagetable, buf, fullpath, n+1) < 0)
+  if(copyout(p->pagetable, buf, fullpath, n+1) < 0) {
+    printf("[sys_getdir] WARNING: copyout failed path=%s n=%d\n, buf=%lu", fullpath, n, buf);
     return -1;
+  }
   return 0;
 }
 

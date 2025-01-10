@@ -42,32 +42,13 @@ copy_file_from_fat32(char *filename)
     printf("failed to create %s\n", path);
     return -1;
   }
-  // printf("[user/init.c:copy_file_from_fat32] before f_open\n");
   // Open source file from FAT32
   if(f_open(&fp, path+7, FA_READ) != FR_OK) {
     close(fd);
     return -1;
   }
-  // printf("[user/init.c:copy_file_from_fat32] after f_open\n");
-
   // Get file size
   sz = f_size(&fp);
-  // printf("[user/init.c:copy_file_from_fat32] file size is %d\n", sz);
-
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.fs=0x%p\n", fp.obj.fs);
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.id=%d\n", fp.obj.id);
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.attr=%d\n", fp.obj.attr);
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.stat=%d\n", fp.obj.stat);
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.sclust=%u\n", fp.obj.sclust);
-  // printf("[user/init.c:copy_file_from_fat32] fp.obj.objsize=%llu\n", (unsigned long long)fp.obj.objsize);
-  // printf("[user/init.c:copy_file_from_fat32] fp.flag=0x%x\n", fp.flag);
-  // printf("[user/init.c:copy_file_from_fat32] fp.err=%d\n", fp.err);
-  // printf("[user/init.c:copy_file_from_fat32] fp.fptr=%llu\n", (unsigned long long)fp.fptr);
-  // printf("[user/init.c:copy_file_from_fat32] fp.clust=%u\n", fp.clust);
-  // printf("[user/init.c:copy_file_from_fat32] fp.sect=%u\n", fp.sect);
-
-  // printf("[user/init.c:copy_file_from_fat32] buf addr=0x%p\n", buf);
-  // printf("[user/init.c:copy_file_from_fat32] buf size=%lu\n", sizeof(buf));
   buf[0] = '\0'; // verify addr validity. 
 
   // Copy data
@@ -85,7 +66,6 @@ copy_file_from_fat32(char *filename)
     printf("[user/init.c:copy_file_from_fat32] WARNING: write return\n");
       return -1;
     }
-    // printf("[user/init.c:copy_file_from_fat32] write %s\n", filename);
   }
 
   // Clean up
@@ -93,6 +73,61 @@ copy_file_from_fat32(char *filename)
   f_close(&fp);
 
   printf("[user/init.c:copy_file_from_fat32] done %s\n", path);
+  return 0;
+}
+
+uint64
+copy_file_from_fat32_to_root(char *filename)
+{
+  printf("[copy_file_from_fat32] %s\n", filename);
+  FIL fp;
+  char path[MAXPATH];
+  FSIZE_t sz;
+  UINT br;
+  int fd;
+
+  // Create path for the file
+  memmove(path, "/", 1);
+  memmove(path+1, filename, strlen(filename)+1);
+  printf("[user/init.c:copy_file_from_fat32] %s\n", path);
+  
+  // Open destination file
+  fd = open(path, O_CREATE | O_WRONLY);
+  if(fd < 0) {
+    printf("failed to create %s\n", path);
+    return -1;
+  }
+  // Open source file from FAT32
+  if(f_open(&fp, path+7, FA_READ) != FR_OK) {
+    close(fd);
+    return -1;
+  }
+  // Get file size
+  sz = f_size(&fp);
+  buf[0] = '\0'; // verify addr validity. 
+
+  // Copy data
+  for(int i = 0; i < sz; i += BSIZE) {
+    if(f_read(&fp, buf, BSIZE, &br) != FR_OK) {
+      close(fd);
+      f_close(&fp);
+    printf("[user/init.c:copy_file_from_fat32_to_root] WARNING: f_read return\n");
+      return -1;
+    }
+    printf("[user/init.c:copy_file_from_fat32_to_root] f_read %s %d\n", filename, i);
+    if(write(fd, buf, br) != br) {
+      close(fd);
+      f_close(&fp);
+    printf("[user/init.c:copy_file_from_fat32_to_root] WARNING: write return\n");
+      return -1;
+    }
+  }
+
+  // Clean up
+  close(fd);
+  f_close(&fp);
+
+  printf("[user/init.c:copy_file_from_fat32_to_root] done %s\n", path);
   return 0;
 }
 
@@ -149,17 +184,15 @@ copy_all_files()
          *p = *p - 'A' + 'a';
      }
     copy_file_from_fat32(fno.fname);
+    if((fno.fname[4] == '_' && fno.fname[5] == 'e' && fno.fname[6] == 'c' && fno.fname[7] == 'h') ||\
+       (fno.fname[4] == '.' && fno.fname[5] == 't' && fno.fname[6] == 'x' && fno.fname[7] == 't') ) {
+      printf("[user/init.c:copy_all_files] INFO: double copy");
+      copy_file_from_fat32_to_root(fno.fname);
+    }
     printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
-
-    // while(1)
-    //   ;
-    // if ('a' <= *fno.fname && *fno.fname <= 'z') {
-    //   copy_file_from_fat32(fno.fname);
-    //   printf("[user/init.c:copy_all_files] Copied file: %s\n", fno.fname);
-    //   while(1)
-    //     ;
-    // }
   }
+  mkdir("/sdcard/mnt");
+  mkdir("/mnt");
   printf("[user/init.c:copy_all_files] done");
   return 0;
 }
