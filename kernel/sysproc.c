@@ -24,6 +24,7 @@ uint64
 sys_exit(void)
 {
   int n;
+  printf("[sys_exit] starting\n");
   argint(0, &n);
   exit(n);
   printf("[sys_exit] WARNING: exit reached return %d\n", n);
@@ -321,5 +322,26 @@ sys_sched_yield(void)
 uint64
 sys_wait4(void)
 {
-  return -1;  // Dummy implementation
+  int pid;
+  uint64 status_addr;
+  int options;
+  
+  argint(0, &pid);
+  argaddr(1, &status_addr); 
+  argint(2, &options);
+
+  // Currently we ignore options parameter and just do basic wait
+  // Future: Implement WNOHANG, WUNTRACED, WCONTINUED options
+  
+  int status;
+  int ret = wait((uint64)&status);
+
+  if(ret >= 0 && status_addr != 0) {
+    // Copy status back to user space if pointer provided
+    if(copyout(myproc()->pagetable, status_addr, (char*)&status, sizeof(status)) < 0) {
+      return -1;
+    }
+  }
+
+  return ret;
 }

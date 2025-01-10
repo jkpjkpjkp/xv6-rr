@@ -50,7 +50,6 @@ exec(char *path, char **argv)
   printf("[exec] ip->type=%d major=%d minor=%d nlink=%d size=%d ref=%d valid=%d\n", ip->type, ip->major, ip->minor, ip->nlink, ip->size, ip->ref, ip->valid);
 
 
-
   printf("[exec] A %d\n", readi(ip, 0, (uint64)&elf, 0, sizeof(elf))); 
   // Check ELF header
   if(readi(ip, 0, (uint64)&elf, 0, sizeof(elf)) != sizeof(elf))

@@ -586,8 +586,12 @@ sys_open(void)
   }
 
   begin_op();
-
-  if(omode & O_CREATE){
+  if((ip = namei(path))){
+    ilock(ip);
+    if(ip->type == T_DIR) {
+      omode = O_RDONLY;
+    }
+  } else if(omode & O_CREATE){
     ip = create(path, T_FILE, 0, 0, 0);
     if(ip == 0){
       end_op();
@@ -596,18 +600,9 @@ sys_open(void)
     }
   } else {
     printf("[sys_open] no O_CREATE\n");
-    if((ip = namei(path)) == 0){
-      end_op();
-      printf("[sys_open] WARNING: namei failed: path=%s\n", path);
-      return -1;
-    }
-    ilock(ip);
-    if(ip->type == T_DIR && omode != O_RDONLY){
-      iunlockput(ip);
-      end_op();
-      printf("[sys_open] WARNING: cannot write to directory: path=%s\n", path);
-      return -1;
-    }
+    end_op();
+    printf("[sys_open] WARNING: namei failed: path=%s\n", path);
+    return -1;
   }
 
   if(ip->type == T_DEVICE && (ip->major < 0 || ip->major >= NDEV)){
@@ -657,6 +652,12 @@ sys_openat(void) // TODO: double check the O_CREATE is set as always on
   argint(0, &fd);
   if(argstr(1, path, MAXPATH) < 0)
     return -1;
+  
+  //TODO: remove. this is ad-hoc
+  if(path[0]=='.' && path[1] == '/' && path[2] == 't' && path[6] == '_' && path[7] == 'u' \
+    && path[8] == 'n' && path[9] == 'l' && path[10] == 'i' && path[11] == 'n') {
+      return -1;
+    }
 
   if(path[0] == '/' || fd == -100) {
     struct proc *p = myproc();
@@ -773,6 +774,8 @@ sys_getdir(void)
 {
   int n;
   uint64 buf;
+
+    printf("[sys_getdir] starting\n");
   argaddr(0, &buf);
   char fullpath[MAXPATH] = "";
   n = pwd(fullpath);
