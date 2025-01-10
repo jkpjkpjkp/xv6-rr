@@ -98,6 +98,7 @@ extern uint64 sys_dup(void);
 extern uint64 sys_getpid(void);
 extern uint64 sys_getppid(void);
 extern uint64 sys_sbrk(void);
+extern uint64 sys_brk(void);
 extern uint64 sys_sleep(void);
 extern uint64 sys_uptime(void);
 extern uint64 sys_open(void);
@@ -148,7 +149,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_getpid]  sys_getpid,
 [SYS_getppid] sys_getppid,
 [SYS_sbrk]    sys_sbrk,
-[SYS_brk]     sys_sbrk, // TODO: probably not right
+[SYS_brk]     sys_brk, // TODO: probably not right
 [SYS_sleep]   sys_sleep,
 [SYS_uptime]  sys_uptime,
 [SYS_open]    sys_open,
