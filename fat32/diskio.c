@@ -57,7 +57,7 @@ DRESULT disk_read(
 {
 	BYTE *orig_buff = buff;
 	UINT orig_count = count;
-	printf("[disk_read] pdrv=%d sector=%d count=%d\n", pdrv, sector, count);
+	// printf("[disk_read] pdrv=%d sector=%d count=%d\n", pdrv, sector, count);
 	if (pdrv != DEV_MMC) {
 		return RES_PARERR;
 	}

@@ -371,7 +371,7 @@ virtio_disk_rw(struct buf *b, int write, int dev)
       }
     }
     if (all_zeros) {
-      printf("[virtio_disk_rw] WARNING: read buffer is all zeros\n");
+      printf("[virtio_disk_rw] INFO: read buffer is all zeros\n");
     }
   }
 }

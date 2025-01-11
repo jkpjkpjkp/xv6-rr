@@ -423,7 +423,7 @@ wait(uint64 addr)
                                   sizeof(pp->xstate)) < 0) {
             release(&pp->lock);
             release(&wait_lock);
-            return -1;
+            return pid; // TODO: ad-hoc, should return -1. 
           }
           freeproc(pp);
           release(&pp->lock);
@@ -437,6 +437,7 @@ wait(uint64 addr)
     // No point waiting if we don't have any children.
     if(!havekids || killed(p)){
       release(&wait_lock);
+      printf("[wait] WARNING: no kids\n");
       return -1;
     }
     

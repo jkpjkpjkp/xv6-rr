@@ -189,8 +189,7 @@ syscall(void)
   if(num==93) {
     printf("[kernel/syscall.c:syscall] exit\n");
   } else if(num== 25) {
-    printf("[kernel/syscall.c:syscall] sys_virtiodiskrw args: fd=%ld cmd=%ld arg=%ld blockno=%ld\n", 
-          p->trapframe->a0, p->trapframe->a1, p->trapframe->a2, p->trapframe->a3);
+    printf("[kernel/syscall.c:syscall] sys_virtiodiskrw: blockno=%ld\n", p->trapframe->a3);
   } else if(num==17) {
     printf("[kernel/syscall.c:syscall] getcwd\n");
   }
