@@ -110,7 +110,7 @@ sys_wait(void)
 {
   uint64 p;
   argaddr(0, &p);
-  return wait(p);
+  return wait(p, -1);
 }
 
 uint64
@@ -331,6 +331,6 @@ sys_wait4(void)
   argint(2, &options);// TODO: Currently we ignore options parameter and just do basic wait
                       // Future: Implement WNOHANG, WUNTRACED, WCONTINUED options
   
-  int ret = wait(status_addr);
+  int ret = wait(status_addr, pid);
   return ret;
 }
