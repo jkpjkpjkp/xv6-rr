@@ -441,7 +441,7 @@ bad:
 }
 
 uint64
-sys_unlinkat(void)
+sys_unlinkat(void) // TODO: will unlink del a regular file?
 {
   int dirfd, flags;
   struct inode *ip, *dp;
@@ -643,22 +643,18 @@ sys_open(void)
 }
 
 uint64
-sys_openat(void) // TODO: double check the O_CREATE is set as always on
+sys_openat(void)
 {
   int fd, n;
   char path[MAXPATH], fullpath[MAXPATH];
   struct file *f;
 
   argint(0, &fd);
-  if(argstr(1, path, MAXPATH) < 0)
+  if(argstr(1, path, MAXPATH) < 0){
+    printf("[sys_openat] WARNING: -1\n");
     return -1;
+  }
   
-  //TODO: remove. this is ad-hoc
-  if(path[0]=='.' && path[1] == '/' && path[2] == 't' && path[6] == '_' && path[7] == 'u' \
-    && path[8] == 'n' && path[9] == 'l' && path[10] == 'i' && path[11] == 'n') {
-      return -1;
-    }
-
   if(path[0] == '/' || fd == -100) {
     struct proc *p = myproc();
     p->trapframe->a0 = p->trapframe->a1;
@@ -666,11 +662,15 @@ sys_openat(void) // TODO: double check the O_CREATE is set as always on
     return sys_open();
   }
 
-  if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
+  if(fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0){
+    printf("[sys_openat] WARNING: 1\n");
     return -1;
+  }
 
-  if(f->type != FD_INODE || !(f->ip->type == T_DIR))
+  if(f->type != FD_INODE || !(f->ip->type == T_DIR)){
+    printf("[sys_openat] WARNING: 2\n");
     return -1;
+  }
 
   n = pwd(fullpath);
   strncpy(fullpath + n, path, MAXPATH - n);
@@ -706,6 +706,7 @@ sys_mkdirat(void)
   struct inode *ip;
 
 
+  printf("[sys_mkdirat] starting\n");
   argint(0, &dirfd);
   if(argstr(1, path, MAXPATH) < 0) {
     printf("[sys_mkdirat] WARNING: argstr\n");
@@ -715,7 +716,7 @@ sys_mkdirat(void)
   begin_op();
   if((ip = create(path, T_DIR, 0, 0, dirfd)) == 0){
     end_op();
-    printf("[sys_mkdirat] WARNING: create\n");
+    printf("[sys_mkdirat] WARNING: create: path: %s, dirfd: %d\n", path, dirfd);
     return -1;
   }
   iunlockput(ip);
@@ -787,9 +788,9 @@ sys_getdir(void)
   struct proc *p = myproc();
   if(copyout(p->pagetable, buf, fullpath, n+1) < 0) {
     printf("[sys_getdir] WARNING: copyout failed path=%s n=%d\n, buf=%lu", fullpath, n, buf);
-    return -1;
+    return 0; // this is correct. 
   }
-  return 0;
+  return buf; // should not be 0. 
 }
 
 struct sys_getdents64_dirent {
@@ -819,16 +820,21 @@ sys_getdents64(void)
   argint(2, &len);
 
   p = myproc();
-  if (fd < 0 || fd >= NOFILE || (f = p->ofile[fd]) == 0)
+  if (fd < 0 || fd >= NOFILE || (f = p->ofile[fd]) == 0){
+    printf("[sys_getdents64] WARNING: 1\n");
     return -1;
+  }
 
-  if (f->type != FD_INODE || !f->readable)
+  if (f->type != FD_INODE || !f->readable){
+    printf("[sys_getdents64] WARNING: 2\n");
     return -1;
+  }
 
   struct inode *dp = f->ip;
   ilock(dp);
   if (dp->type != T_DIR) {
     iunlock(dp);
+    printf("[sys_getdents64] WARNING: 3\n");
     return -1;
   }
 
@@ -846,7 +852,8 @@ sys_getdents64(void)
     ret.d_reclen = sizeof(ret) - sizeof(ret.d_name) + strlen(ret.d_name);
     if (cur_len + sizeof(ret) > len) {
       iunlock(dp);
-      return -1;
+      printf("[sys_getdents64] WARNING: 4\n");
+      return cur_len;
     }
     copyout(p->pagetable, buf + cur_len, (char *) &ret, sizeof(ret));
   }

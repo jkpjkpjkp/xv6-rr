@@ -3731,7 +3731,7 @@ static FRESULT validate (	/* Returns FR_OK or FR_INVALID_OBJECT */
 #endif
 	}
 	*rfs = (res == FR_OK) ? obj->fs : 0;	/* Return corresponding filesystem object if it is valid */
-	printf("[validate] res=%d fs=%p\n", res, *rfs);
+	// printf("[validate] res=%d fs=%p\n", res, *rfs);
 	return res;
 }
 

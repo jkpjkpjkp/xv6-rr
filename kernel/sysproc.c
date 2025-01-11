@@ -135,10 +135,15 @@ sys_brk(void)
   printf("[sys_brk] addr=0x%lx brk=0x%lx\n", addr, brk);
   printf("[sys_brk] myproc()->sz=0x%lu\n", myproc()->sz);
   printf("[sys_brk] growproc size=%d\n", (int)(brk-addr));
+
+  // TODO: this is ad-hoc. we now ignore brk shrinking requests. 
+  if(brk < addr){
+    printf("[sys_sbrk] INFO: ad-hoc return");
+    return 0;
+  }
+
   if(growproc((int)(brk-addr)) < 0) {
-    printf(
-      "[sys_sbrk] WARNING: growproc failed"
-    );
+    printf("[sys_sbrk] WARNING: growproc failed");
     return -1;
   }
   return 0;
@@ -332,5 +337,6 @@ sys_wait4(void)
                       // Future: Implement WNOHANG, WUNTRACED, WCONTINUED options
   
   int ret = wait(status_addr, pid);
+  printf("[sys_wait4] INFO: ret=%d, pid=%d\n", ret, pid);
   return ret;
 }
