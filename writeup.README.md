@@ -37,11 +37,13 @@
 目前的bug：
     shutdown。因为没有sbi，得研究怎么设mvec。还没搞
     
-    brk、clone因为不明原因一上来就usertrap
+    clone一上来会usertrap一次，但好像能过。
 
-    test_echo在被execve的时候读不了（拷贝的log是正常的）
+    test_echo在被execve的时候读不了（bmap回0,也许是xv6的什么buffer资源满了）
 
-    exit不了（很迷惑，好像sys_exit都没执行）
+    unlink会失败（其实unlink是成功的，但我们默认在open的时候O_CREAT(我忘记为什么了，一会儿去掉试试)）
+
+挂的测试点列表见 `git log --oneline`
 
 
 
