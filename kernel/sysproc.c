@@ -13,6 +13,7 @@ sys_shutdown(void)
   // SBI_SYSTEM_RESET = 0x53525354 (ASCII "SRST")
   // Type = 0 for shutdown
   // Reason = 0 for normal shutdown
+  printf("[sys_shutdown] starting\n");
   asm volatile("li a7, 0x53525354"); // SBI SRST extension
   asm volatile("li a0, 0"); // Type = shutdown
   asm volatile("li a1, 0"); // Reason = normal

@@ -141,8 +141,14 @@ kerneltrap()
   uint64 sstatus = r_sstatus();
   uint64 scause = r_scause();
   
-  if((sstatus & SSTATUS_SPP) == 0)
+  if((sstatus & SSTATUS_SPP) == 0){
+    printf("kerneltrap: unexpected trap from user mode\n");
+    printf("scause=0x%lx sepc=0x%lx stval=0x%lx sstatus=0x%lx\n", 
+           scause, sepc, r_stval(), sstatus);
+    printf("current process: %d\n", myproc() ? myproc()->pid : -1);
+    printf("cpu: %d\n", cpuid());
     panic("kerneltrap: not from supervisor mode");
+  }
   if(intr_get() != 0)
     panic("kerneltrap: interrupts enabled");
 

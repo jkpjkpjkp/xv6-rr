@@ -10,6 +10,8 @@ void timerinit();
 // entry.S needs one stack per CPU.
 __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 
+extern void mtrapvec();  
+
 // entry.S jumps here in machine mode on stack0.
 void
 start()
@@ -28,8 +30,9 @@ start()
   w_satp(0);
 
   // delegate all interrupts and exceptions to supervisor mode.
-  w_medeleg(0xffff);
+  w_medeleg(0xffff ^ 1<<9);
   w_mideleg(0xffff);
+  w_mtvec((uint64)mtrapvec);
   w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
 
   // configure Physical Memory Protection to give supervisor mode
